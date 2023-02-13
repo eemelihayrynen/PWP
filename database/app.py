@@ -2,10 +2,9 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
-from sqlalchemy.exc import IntegrityError, OperationalError
 
-app = Flask(__name__, static_folder="static")
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///movieserach.db"
+app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///moviesearch.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
@@ -17,28 +16,33 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.close()
 
 class Movie(db.Model):
-    id = 
-    title = 
-    director = 
-    streaming_services = 
-    actors = 
-    rating =
-    writer =
-    release_year = 
-    genres =
+    id = db.Column(db.Integer, primary_key = True)
+    title = db.Column(db.String(256), nullable=False)
+    comments = db.Column(db.String(256), nullable=True)
+    rating = db.Column(db.Float, nullable=True)
+    director_id = db.Column(db.Integer, db.ForeignKey('director.id'), nullable=False)
+    writer = db.Column(db.String(256), nullable=True)
+    cast_id = db.Column(db.Integer, db.ForeignKey('cast.id'), nullable=False)
+    release_year = db.Column(db.Integer, nullable=True)
+    genres = db.Column(db.String(256), nullable=True)
 
 class Actor(db.Model):
-    id =
-    first_name =
-    last_name =
-    movie_id =
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(128), nullable=False)
+    last_name = db.Column(db.String(128), nullable=False)
+    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
 
 class Director(db.Model):
-    id =
-    first_name =
-    last_name =
-    movie_id =
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(256), nullable=False)
+    last_name = db.Column(db.String(256), nullable=False)
+    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
+
+class Cast(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    actor_id = db.Column(db.Integer, db.ForeignKey('actor.id'), nullable=False)
 
 class StreamingService(db.Model):
-    id =
-    name =
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(256), nullable=False)
+    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
