@@ -20,9 +20,7 @@ class Movie(db.Model):
     title = db.Column(db.String(256), nullable=False)
     comments = db.Column(db.String(256), nullable=True)
     rating = db.Column(db.Float, nullable=True)
-    director_id = db.Column(db.Integer, db.ForeignKey('director.id'), nullable=False)
     writer = db.Column(db.String(256), nullable=True)
-    cast_id = db.Column(db.Integer, db.ForeignKey('cast.id'), nullable=False)
     release_year = db.Column(db.Integer, nullable=True)
     genres = db.Column(db.String(256), nullable=True)
 
@@ -34,13 +32,9 @@ class Actor(db.Model):
 
 class Director(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(256), nullable=False)
-    last_name = db.Column(db.String(256), nullable=False)
+    first_name = db.Column(db.String(128), nullable=False)
+    last_name = db.Column(db.String(128), nullable=False)
     movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
-
-class Cast(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    actor_id = db.Column(db.Integer, db.ForeignKey('actor.id'), nullable=False)
 
 class StreamingService(db.Model):
     id = db.Column(db.Integer, primary_key=True)
