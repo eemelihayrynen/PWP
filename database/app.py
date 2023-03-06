@@ -1,18 +1,16 @@
 import json
-from flask import Flask, Response, request
+from flask import Flask, Response, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from flask_restful import Api, Resource
+from marshmallow import Schema, fields
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///moviesearch.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 api = Api(app)
 db = SQLAlchemy(app)
-
-
-
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -32,17 +30,9 @@ class Movie(db.Model):
     director_id = db.Column(db.Integer)
     streaming_id = db.Column(db.Integer)
 
-
     actors = db.relationship("Actor", back_populates="in_movie")
     directors = db.relationship("Director", back_populates="in_movie_d")
     streamers = db.relationship("StreamingService", back_populates="streamingnow")
-
-    def serialize(self):
-         return {
-                "title": self.title
-            }
-
-
 
 class Actor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -52,7 +42,6 @@ class Actor(db.Model):
 
     in_movie = db.relationship("Movie", back_populates="actors")
 
-
 class Director(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(128), nullable=False)
@@ -61,7 +50,6 @@ class Director(db.Model):
 
     in_movie_d = db.relationship("Movie", back_populates="directors")
 
-
 class StreamingService(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), nullable=False)
@@ -69,75 +57,60 @@ class StreamingService(db.Model):
 
     streamingnow = db.relationship("Movie", back_populates="streamers")
 
-
 class MovieCollection(Resource):
-    def get(self):
-        Movie.serialize(Movie)
-        return Movie.query.first()
+    def get(self,moviename):
+        db_movie = Movie.query.filter_by(title = moviename).first()
+        db_movie_dict = db_movie.__dict__
+        del db_movie_dict['_sa_instance_state']
+        return jsonify(db_movie_dict)
+    
+    def delete(self,moviename):
+        pass
 
-
-
+class MovieAddition(Resource):
     def post(self):
-        return 400
-
-"""
-def populate_db():
-    ctx.push()
-    stream_1 = StreamingService(
-        id=0,
-        name = "Netflix"
-    )
-    actor_1=Actor(
-        id=0,
-        first_name = "Kate",
-        last_name = "Winslet"
-
-
-    )
-
-    movie_1 = Movie(
-        id = 0,
-        title = "Titanic",
-        comments = "Kys",
-        rating = 7.9,
-        writer = "Cameron",
-        release_year = 1998,
-        genres = "Romance"
-       
-        
-
-    )
-    movie_2 = Movie(
-        id = 1,
-        title = "Titanic2",
-        comments = "Kys2",
-        rating = 7.90,
-        writer = "Cameron2",
-        release_year = 19982,
-        genres = "Romance2"
-    
-    )
-    movie_3 = Movie(
-        id = 2,
-        title = "Titanic3",
-        comments = "Kys3",
-        rating = 7.900,
-        writer = "Cameron3",
-        release_year = 19983,
-        genres = "Romance3"
-    
-        
-    )
-    with app.app_context():
-        db.session.add(stream_1)
-        db.session.add(actor_1)
-        db.session.add(movie_1)
-        db.session.add(movie_2)
-        db.session.add(movie_3)
-
+        id = int(request.json["id"])
+        title = str(request.json["title"])
+        comments = str(request.json["comments"])
+        rating = float(request.json["rating"])
+        writer = str(request.json["writer"])
+        release_year = int(request.json["release_year"])
+        genres = str(request.json["genres"])
+        movie = Movie(
+            id=id, title=title, comments=comments, rating=rating, writer=writer, release_year=release_year, genres=genres
+        )
+        db.session.add(movie)
         db.session.commit()
-    return 401
-"""
-api.add_resource(MovieCollection,"/ass/")
+        resp =Response()
+        resp.status=201
+        return resp
+    
+class ActorAddition(Resource):
+    def post(self):
+        id = int(request.json["id"])
+        first = str(request.json["first_name"])
+        last = str(request.json["last_name"])
+        actor = Actor(
+            id=id, first_name=first, last_name=last
+        )
+        db.session.add(actor)
+        db.session.commit()
+        resp =Response()
+        resp.status=201
+        return resp
+    
+class ActorCollection(Resource):    
+    def delete(self,actorname):
+        pass
+    def get(self,actorname):
+        pass
 
+class StreamingCollection(Resource):
+    def put(self,moviename):
+        pass
 
+api.add_resource(MovieCollection,"/Moviesearch/<moviename>/")
+api.add_resource(MovieAddition,"/Movie/")
+api.add_resource(ActorAddition,"/Actorsearch/<actorname>/")
+api.add_resource(ActorCollection,"/Actor/")
+api.add_resource(StreamingCollection,"/Streaming/<moviename>/")
