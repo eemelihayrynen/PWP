@@ -26,13 +26,15 @@ class Movie(db.Model):
     writer = db.Column(db.String(256), nullable=True)
     release_year = db.Column(db.Integer, nullable=True)
     genres = db.Column(db.String(256), nullable=True)
-    actor_id = db.Column(db.Integer)
+    #actor_id = db.Column(db.Integer, db.ForeignKey(actor.id))
     director_id = db.Column(db.Integer)
     streaming_id = db.Column(db.Integer)
 
     actors = db.relationship("Actor", back_populates="in_movie")
     directors = db.relationship("Director", back_populates="in_movie_d")
     streamers = db.relationship("StreamingService", back_populates="streamingnow")
+
+
 
 class Actor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -69,29 +71,44 @@ class MovieCollection(Resource):
 
 class MovieAddition(Resource):
     def post(self):
-        id = int(request.json["id"])
         title = str(request.json["title"])
         comments = str(request.json["comments"])
         rating = float(request.json["rating"])
         writer = str(request.json["writer"])
         release_year = int(request.json["release_year"])
         genres = str(request.json["genres"])
+        actors = list(request.json["actors"]) 
+
         movie = Movie(
-            id=id, title=title, comments=comments, rating=rating, writer=writer, release_year=release_year, genres=genres
+            title=title, comments=comments, rating=rating, writer=writer, release_year=release_year, genres=genres
         )
+        print(actors)
+        for actor in actors:
+            print(actor)
+            db_actor = Actor.query.filter_by(first_name = actor.split(" ")[0],last_name = actor.split(" ")[1]).first()
+            if db_actor == None:
+                return "Actor not found"
+                
+            
         db.session.add(movie)
         db.session.commit()
+        for actor in actors:
+            db_actor = Actor.query.filter_by(first_name = actor.split(" ")[0],last_name = actor.split(" ")[1]).first()
+
+            movie.actors.append(db_actor)
+            db.session.commit()
+            print(db_actor.id)
         resp =Response()
         resp.status=201
         return resp
     
 class ActorAddition(Resource):
     def post(self):
-        id = int(request.json["id"])
+
         first = str(request.json["first_name"])
         last = str(request.json["last_name"])
         actor = Actor(
-            id=id, first_name=first, last_name=last
+            first_name=first, last_name=last
         )
         db.session.add(actor)
         db.session.commit()
@@ -103,7 +120,11 @@ class ActorCollection(Resource):
     def delete(self,actorname):
         pass
     def get(self,actorname):
-        pass
+        db_actor = Actor.query.filter_by(first_name = actorname.split(" ")[0],last_name = actorname.split(" ")[1]).first()
+        db_actor_dict = db_actor.__dict__
+        del db_actor_dict['_sa_instance_state']
+        return jsonify(db_actor_dict)
+
 
 class StreamingCollection(Resource):
     def put(self,moviename):
@@ -114,3 +135,4 @@ api.add_resource(MovieAddition,"/Movie/")
 api.add_resource(ActorAddition,"/Actorsearch/<actorname>/")
 api.add_resource(ActorCollection,"/Actor/")
 api.add_resource(StreamingCollection,"/Streaming/<moviename>/")
+
