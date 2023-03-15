@@ -1,32 +1,48 @@
 from app import db
 from app import app
 from app import Movie, Actor, Director, StreamingService
-
 ctx = app.app_context()
 ctx.push()
+db.create_all()
 
-movie = Movie(id=1, title="The Shawshank Redemption", comments="NULL", rating=9.2, writer="Stepher King", release_year="1994", genres="Drama")
+
+
+actor1 = Actor(
+	first_name="Tim",
+	last_name="Robbins"
+)
+
+actor2 = Actor(
+	first_name="Morgan",
+	last_name="Freeman"
+)
+
+dir1 = Director(
+	first_name="Frank",
+	last_name="Darabont"
+)
+
+ss1 = StreamingService(name="Netflix")
+ss2 = StreamingService(name="Disney+")
+
+movie = Movie(
+	title="The Shawshank Redemption",
+	directors=[dir1],
+	streaming_services=[ss1,ss2],
+	actors=[actor1,actor2],
+	rating=9.2,
+	writer="Stepher King",
+	release_year="1994",
+	genres="Drama"
+)
+
 
 db.session.add(movie)
 db.session.commit()
 
-actor1 = Actor(id=1, first_name="Tim", last_name="Robbins", movie_id=1)
-actor2 = Actor(id=2, first_name="Morgan", last_name="Freeman", movie_id=1)
-
-db.session.add(actor1)
-db.session.add(actor2)
-db.session.commit()
-
-dir1 = Director(id=1, first_name="Frank", last_name="Darabont", movie_id=1)
-
-db.session.add(dir1)
-db.session.commit()
-
-ss1 = StreamingService(id=1, name="Netflix", movie_id=1)
-ss2 = StreamingService(id=2, name="Disney+", movie_id=1)
-
-db.session.add(ss1)
-db.session.add(ss2)
-db.session.commit()
-
-ctx.pop()
+entry = Movie.query.first()
+print(type(entry))
+entry.title
+entry.directors
+entry.rating
+entry.release_year

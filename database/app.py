@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from flask_restful import Api, Resource
-from marshmallow import Schema, fields
+#from marshmallow import Schema, fields
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///moviesearch.db"
@@ -18,6 +18,22 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
 
+
+MovieActorsAssociation = db.Table('MovieActorsAssosiation',
+    db.Column('movie_id', db.Integer, db.ForeignKey('movie.id'), primary_key=True),
+    db.Column('actor_id', db.Integer, db.ForeignKey('actor.id'), primary_key=True)
+)
+
+MovieDirectorsAssociation = db.Table('MovieDirectorsAssosiation',
+    db.Column('movie_id', db.Integer, db.ForeignKey('movie.id'), primary_key=True),
+    db.Column('director_id', db.Integer, db.ForeignKey('director.id'), primary_key=True)
+)
+
+MovieStreamingServicesAssociation = db.Table('MovieStreamingServicesAssosiation',
+    db.Column('movie_id', db.Integer, db.ForeignKey('movie.id'), primary_key=True),
+    db.Column('streaming_service_id', db.Integer, db.ForeignKey('streaming_service.id'), primary_key=True)
+)
+
 class Movie(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     title = db.Column(db.String(256), nullable=False)
@@ -27,44 +43,90 @@ class Movie(db.Model):
     release_year = db.Column(db.Integer, nullable=True)
     genres = db.Column(db.String(256), nullable=True)
     #actor_id = db.Column(db.Integer, db.ForeignKey(actor.id))
-    director_id = db.Column(db.Integer)
-    streaming_id = db.Column(db.Integer)
+    #pp director_id = db.Column(db.Integer)
+    #pp streaming_id = db.Column(db.Integer)
 
-    actors = db.relationship("Actor", back_populates="in_movie")
-    directors = db.relationship("Director", back_populates="in_movie_d")
-    streamers = db.relationship("StreamingService", back_populates="streamingnow")
+    actors = db.relationship("Actor", secondary=MovieActorsAssociation, back_populates='movies')
+    directors = db.relationship("Director", secondary=MovieDirectorsAssociation, back_populates='movies')
+    streaming_services = db.relationship("StreamingService", secondary=MovieStreamingServicesAssociation, back_populates='movies')
 
-
+    def serialize(self):
+        actors = []
+        #TODO: convert these loops to shorter code e.g. with list comprehension
+        for a in self.actors:
+            actors.append(a.serialize())
+        directors = []
+        for d in self.directors:
+            directors.append(d.serialize())
+        streaming_services = []
+        for s in self.streaming_services:
+            streaming_services.append(s.serialize())
+        return {
+            "title": self.title,
+            "comments": self.comments,
+            "rating": self.rating,
+            "writer": self.writer,
+            "release_year": self.release_year,
+            "genres": self.genres,
+            "actors": actors,
+            "directors": directors,
+            "streaming_services": streaming_services,
+        }
 
 class Actor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(128), nullable=False)
     last_name = db.Column(db.String(128), nullable=False)
-    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
+    #movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
 
-    in_movie = db.relationship("Movie", back_populates="actors")
+    #in_movie = db.relationship("Movie", back_populates="actors")
+    
+    movies = db.relationship("Movie", secondary=MovieActorsAssociation, back_populates='actors')
+
+    def serialize(self):
+        return {
+            "first_name": self.first_name,
+            "last_name": self.last_name
+        }
+        
 
 class Director(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(128), nullable=False)
     last_name = db.Column(db.String(128), nullable=False)
-    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
+    #pp movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
 
-    in_movie_d = db.relationship("Movie", back_populates="directors")
+    #pp in_movie_d = db.relationship("Movie", back_populates="directors")
+
+    movies = db.relationship("Movie", secondary=MovieDirectorsAssociation, back_populates='directors')
+
+    def serialize(self):
+        return {
+            "first_name": self.first_name,
+            "last_name": self.last_name
+        }
 
 class StreamingService(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), nullable=False)
-    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
+    #pp movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
 
-    streamingnow = db.relationship("Movie", back_populates="streamers")
+    #pp streamingnow = db.relationship("Movie", back_populates="streamers")
+
+    movies = db.relationship("Movie", secondary=MovieStreamingServicesAssociation, back_populates='streaming_services')
+
+    def serialize(self):
+        return {
+            "name": self.name,
+        }
 
 class MovieCollection(Resource):
-    def get(self,moviename):
+    def get(self, moviename):
         db_movie = Movie.query.filter_by(title = moviename).first()
-        db_movie_dict = db_movie.__dict__
-        del db_movie_dict['_sa_instance_state']
-        return jsonify(db_movie_dict)
+
+        #db_movie_dict = db_movie.__dict__
+        #del db_movie_dict['_sa_instance_state']
+        return db_movie.serialize()
     
     def delete(self,moviename):
         pass
