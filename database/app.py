@@ -5,6 +5,9 @@ from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from flask_restful import Api, Resource
 #from marshmallow import Schema, fields
+from jsonschema import validate, ValidationError, Draft7Validator
+from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
+
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///moviesearch.db"
@@ -72,6 +75,51 @@ class Movie(db.Model):
             "directors": directors,
             "streaming_services": streaming_services,
         }
+    
+    @staticmethod
+    def json_schema():
+        schema = {
+            "type": "object",
+            "required": ["title"] #TODO: decide if actors, etc. are required and match to db definitions
+        }
+        props = schema["properties"] = {}
+        props["title"] = {
+            "description": "Name of the movie",
+            "type": "string"
+        }
+        props["comments"] = {
+            "description": "Comments in one string",
+            "type": "string"
+        }
+        props["rating"] = {
+            "description": "Rating from imdb",
+            "type": "number"
+        }
+        props["writer"] = {
+            "description": "Writer",
+            "type": "string"
+        }
+        props["release_year"] = {
+            "description": "Year of the original release",
+            "type": "integer"
+        }
+        props["genres"] = {
+            "description": "Genres in one string",
+            "type": "string"
+        }
+        props["actors"] = {
+            "description": "List of actors",
+            "$def": "#Actor.json_schema()"#TODO: this reference doesn't work
+        }
+        props["directors"] = {
+            "description": "List of directors",
+            "$def": "#Director.json_schema()"#TODO: this reference doesn't work
+        }
+        props["streaming_services"] = {
+            "description": "List of streaming services",
+            "$def": "#StreamingService.json_schema()"#TODO: this reference doesn't work
+        }
+        return schema
 
 class Actor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -89,6 +137,23 @@ class Actor(db.Model):
             "last_name": self.last_name
         }
         
+    @staticmethod
+    def json_schema():
+        schema = {
+            "$id": "/schemas/actor",
+            "type": "object",
+            "required": ["first_name", "last_name"]
+        }
+        props = schema["properties"] = {}
+        props["first_name"] = {
+            "description": "First name",
+            "type": "string"
+        }
+        props["last_name"] = {
+            "description": "Last name",
+            "type": "string"
+        }
+        return schema
 
 class Director(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -106,6 +171,24 @@ class Director(db.Model):
             "last_name": self.last_name
         }
 
+    @staticmethod
+    def json_schema():
+        schema = {
+            "$id": "/schemas/director",
+            "type": "object",
+            "required": ["first_name", "last_name"]
+        }
+        props = schema["properties"] = {}
+        props["first_name"] = {
+            "description": "First name",
+            "type": "string"
+        }
+        props["last_name"] = {
+            "description": "Last name",
+            "type": "string"
+        }
+        return schema
+
 class StreamingService(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), nullable=False)
@@ -119,6 +202,21 @@ class StreamingService(db.Model):
         return {
             "name": self.name,
         }
+    
+    @staticmethod
+    def json_schema():
+        schema = {
+            "$id": "/schemas/streaming_services",
+            "type": "object",
+            "required": ["name"]
+        }
+        props = schema["properties"] = {}
+        props["name"] = {
+            "description": "Name of the service",
+            "type": "string"
+        }
+        return schema
+
 
 class MovieCollection(Resource):
     def get(self, moviename):
@@ -133,35 +231,81 @@ class MovieCollection(Resource):
 
 class MovieAddition(Resource):
     def post(self):
+        validator = Draft7Validator(
+                Movie.json_schema(),
+                format_checker=Draft7Validator.FORMAT_CHECKER
+                )
+        try:
+            print("Trying to validate request json")
+            validator.validate(request.json)
+        except ValidationError as error_message:
+            raise BadRequest(description=str(error_message))
+        
+        #TODO: create deserialize method to Movie class to simplify this
         title = str(request.json["title"])
         comments = str(request.json["comments"])
         rating = float(request.json["rating"])
         writer = str(request.json["writer"])
         release_year = int(request.json["release_year"])
         genres = str(request.json["genres"])
-        actors = list(request.json["actors"]) 
-
+        to_be_checked_actors = list(request.json["actors"])
+        to_be_checked_directors = list(request.json["directors"])
+        to_be_checked_streaming_services = list(request.json["streaming_services"])
+        #TODO: check that the movie doesn't exist yet.
         movie = Movie(
-            title=title, comments=comments, rating=rating, writer=writer, release_year=release_year, genres=genres
+            title=title, comments=comments, rating=rating, writer=writer, release_year=release_year, genres=genres, actors=[]
         )
-        print(actors)
-        for actor in actors:
+        #print(to_be_checked_actors)
+        for actor in to_be_checked_actors:
             print(actor)
-            db_actor = Actor.query.filter_by(first_name = actor.split(" ")[0],last_name = actor.split(" ")[1]).first()
+            db_actor = Actor.query.filter_by(first_name = actor["first_name"],last_name = actor["last_name"]).first()
             if db_actor == None:
-                return "Actor not found"
-                
-            
+                #no actor found, so let's add a new one
+                print("Actor not in database")
+                movie.actors.append(
+                    Actor(
+                        first_name=actor["first_name"], last_name=actor["last_name"]
+                        )
+                )
+            else:
+                #if the actor existed, we'll add refrerence to the existing entry
+                movie.actors.append(db_actor)
+        
+        for director in to_be_checked_directors:
+            print(director)
+            db_director = Director.query.filter_by(first_name = director["first_name"],last_name = director["last_name"]).first()
+            if db_director == None:
+                #no director found, so let's add a new one
+                print("Director not in database")
+                movie.directors.append(
+                    Director(
+                        first_name=director["first_name"], last_name=director["last_name"]
+                        )
+                )
+            else:
+                #if the actor existed, we'll add refrerence to the existing entry
+                movie.director.append(db_director)
+
+        for streaming_service in to_be_checked_streaming_services:
+            print(streaming_service)
+            db_streaming_service = StreamingService.query.filter_by(name = streaming_service["name"]).first()
+            if db_streaming_service == None:
+                #no streaming_service found, so let's add a new one
+                print("streaming_service not in database")
+                movie.streaming_services.append(
+                    StreamingService(
+                        name=streaming_service["name"]
+                        )
+                )
+            else:
+                #if the actor existed, we'll add refrerence to the existing entry
+                movie.streaming_services.append(db_streaming_service)
+
         db.session.add(movie)
         db.session.commit()
-        for actor in actors:
-            db_actor = Actor.query.filter_by(first_name = actor.split(" ")[0],last_name = actor.split(" ")[1]).first()
-
-            movie.actors.append(db_actor)
-            db.session.commit()
-            print(db_actor.id)
         resp =Response()
         resp.status=201
+        #TODO: add uri of created movie to the response
         return resp
     
 class ActorAddition(Resource):

@@ -1,0 +1,103 @@
+{
+    "title": "The Shawshank Redemption",
+    "comments": "",
+    "rating": 9.2,
+    "writer": "Stepher King",
+    "release_year": 1994,
+    "genres": "Drama",
+    "actors":[
+        {
+        "first_name": "Tim",
+        "last_name": "Robbins"
+        },
+        {
+        "first_name": "Morgan",
+        "last_name": "Freeman"
+        }
+    ],
+    "directors":[
+        {
+        "first_name": "Frank",
+        "last_name": "Darabont"
+        }
+    ],
+    "streaming_services":[
+        {
+        "name": "Netflix"
+        },
+        {
+        "name": "Disney+"
+        }
+    ]
+}
+
+{
+    "title": "The Godfather",
+    "comments": "",
+    "rating": 9.2,
+    "writer": "Mario Puzo",
+    "release_year": 1972,
+    "genres": "Drama/Crime",
+    "actors":[
+        {
+        "first_name": "Mario",
+        "last_name": "Brando"
+        },
+        {
+        "first_name": "Al",
+        "last_name": "Pacino"
+        },
+        {
+        "first_name": "James",
+        "last_name": "Caan"
+        }
+    ],
+    "directors":[
+        {
+        "first_name": "Frans",
+        "last_name": "Ford Coppola"
+        }
+    ],
+    "streaming_services":[
+        {
+        "name": "Sky Showtime"
+        },
+        {
+        "name": "Netflix"
+        }
+    ]
+}
+
+{
+    "title": "The Dark Knight",
+    "comments": "",
+    "rating": 9.0,
+    "writer": "David S. Goyer",
+    "release_year": 2008,
+    "genres": "Action/Drama/Crime",
+    "actors":[
+        {
+        "first_name": "Christian",
+        "last_name": "Bale"
+        },
+        {
+        "first_name": "Heath",
+        "last_name": "Ledger"
+        },
+        {
+        "first_name": "Aaron",
+        "last_name": "Eckhart"
+        }
+    ],
+    "directors":[
+        {
+        "first_name": "Christopher",
+        "last_name": "Nolan"
+        }
+    ],
+    "streaming_services":[
+        {
+        "name": "HBO Max"
+        }
+    ]
+}
