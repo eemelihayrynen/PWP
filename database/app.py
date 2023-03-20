@@ -9,8 +9,9 @@ from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
 
 
+
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///moviesearch.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///C:/Users/Eemeli/Documents/PWP/database/instance/moviesearch.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 api = Api(app)
 db = SQLAlchemy(app)
@@ -227,7 +228,9 @@ class MovieCollection(Resource):
         return db_movie.serialize()
     
     def delete(self,moviename):
-        pass
+        movie = db.session.query(Movie).filter(Movie.title == moviename).first()
+        db.session.delete(movie)
+        db.session.commit()
 
 class MovieAddition(Resource):
     def post(self):
@@ -238,6 +241,7 @@ class MovieAddition(Resource):
         try:
             print("Trying to validate request json")
             validator.validate(request.json)
+
         except ValidationError as error_message:
             raise BadRequest(description=str(error_message))
         
@@ -259,6 +263,7 @@ class MovieAddition(Resource):
         for actor in to_be_checked_actors:
             print(actor)
             db_actor = Actor.query.filter_by(first_name = actor["first_name"],last_name = actor["last_name"]).first()
+            print("ass")
             if db_actor == None:
                 #no actor found, so let's add a new one
                 print("Actor not in database")
@@ -269,6 +274,7 @@ class MovieAddition(Resource):
                 )
             else:
                 #if the actor existed, we'll add refrerence to the existing entry
+                
                 movie.actors.append(db_actor)
         
         for director in to_be_checked_directors:
@@ -324,7 +330,10 @@ class ActorAddition(Resource):
     
 class ActorCollection(Resource):    
     def delete(self,actorname):
-        pass
+        actor = db.session.query(Actor).filter(Actor.first_name == actorname.split(" ")[0],Actor.last_name == actorname.split(" ")[1]).first()
+        db.session.delete(actor)
+        db.session.commit()
+    
     def get(self,actorname):
         db_actor = Actor.query.filter_by(first_name = actorname.split(" ")[0],last_name = actorname.split(" ")[1]).first()
         db_actor_dict = db_actor.__dict__
@@ -338,7 +347,6 @@ class StreamingCollection(Resource):
 
 api.add_resource(MovieCollection,"/Moviesearch/<moviename>/")
 api.add_resource(MovieAddition,"/Movie/")
-api.add_resource(ActorAddition,"/Actorsearch/<actorname>/")
-api.add_resource(ActorCollection,"/Actor/")
+api.add_resource(ActorAddition,"/Actor/")
+api.add_resource(ActorCollection,"/Actorsearch/<actorname>/")
 api.add_resource(StreamingCollection,"/Streaming/<moviename>/")
-
