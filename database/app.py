@@ -7,14 +7,22 @@ from flask_restful import Api, Resource
 #from marshmallow import Schema, fields
 from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
+from werkzeug.routing import BaseConverter
+from flasgger import Swagger, swag_from
 
 
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///C:/Users/Eemeli/Documents/PWP/database/instance/moviesearch.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///moviesearch.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SWAGGER"] = {
+    "title": "Sensorhub API",
+    "openapi": "3.0.3",
+    "uiversion": 3,
+}
 api = Api(app)
 db = SQLAlchemy(app)
+swagger = Swagger(app, template_file="doc/moviesearch.yml")
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -35,10 +43,15 @@ MovieDirectorsAssociation = db.Table('MovieDirectorsAssosiation',
 
 MovieStreamingServicesAssociation = db.Table('MovieStreamingServicesAssosiation',
     db.Column('movie_id', db.Integer, db.ForeignKey('movie.id'), primary_key=True),
-    db.Column('streaming_service_id', db.Integer, db.ForeignKey('streaming_service.id'), primary_key=True)
+    db.Column(
+        'streaming_service_id',
+        db.Integer, db.ForeignKey('streaming_service.id'),
+        primary_key=True
+    )
 )
 
 class Movie(db.Model):
+    """Database definition and utility functions for streaming movies"""
     id = db.Column(db.Integer, primary_key = True)
     title = db.Column(db.String(256), nullable=False)
     comments = db.Column(db.String(256), nullable=True)
@@ -46,9 +59,6 @@ class Movie(db.Model):
     writer = db.Column(db.String(256), nullable=True)
     release_year = db.Column(db.Integer, nullable=True)
     genres = db.Column(db.String(256), nullable=True)
-    #actor_id = db.Column(db.Integer, db.ForeignKey(actor.id))
-    #pp director_id = db.Column(db.Integer)
-    #pp streaming_id = db.Column(db.Integer)
 
     actors = db.relationship("Actor", secondary=MovieActorsAssociation, back_populates='movies')
     directors = db.relationship("Director", secondary=MovieDirectorsAssociation, back_populates='movies')
@@ -123,12 +133,10 @@ class Movie(db.Model):
         return schema
 
 class Actor(db.Model):
+    """Database definition and utility functions for actors"""
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(128), nullable=False)
     last_name = db.Column(db.String(128), nullable=False)
-    #movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
-
-    #in_movie = db.relationship("Movie", back_populates="actors")
     
     movies = db.relationship("Movie", secondary=MovieActorsAssociation, back_populates='actors')
 
@@ -157,12 +165,10 @@ class Actor(db.Model):
         return schema
 
 class Director(db.Model):
+    """Database definition and utility functions for director"""
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(128), nullable=False)
     last_name = db.Column(db.String(128), nullable=False)
-    #pp movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
-
-    #pp in_movie_d = db.relationship("Movie", back_populates="directors")
 
     movies = db.relationship("Movie", secondary=MovieDirectorsAssociation, back_populates='directors')
 
@@ -191,11 +197,9 @@ class Director(db.Model):
         return schema
 
 class StreamingService(db.Model):
+    """Database definition and utility functions for streaming services"""
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), nullable=False)
-    #pp movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), nullable=False)
-
-    #pp streamingnow = db.relationship("Movie", back_populates="streamers")
 
     movies = db.relationship("Movie", secondary=MovieStreamingServicesAssociation, back_populates='streaming_services')
 
@@ -217,23 +221,107 @@ class StreamingService(db.Model):
             "type": "string"
         }
         return schema
-
-
-class MovieCollection(Resource):
-    def get(self, moviename):
-        db_movie = Movie.query.filter_by(title = moviename).first()
+    
+class MovieConverter(BaseConverter):
+    def to_python(self, value):
+        db_movie = Movie.query.filter_by(title=value).first()
+        if db_movie is None:
+            raise NotFound
+        return db_movie
+        
+    def to_url(self, value):
+        return value.title
+class MovieItem(Resource):
+    """Resource for getting (searching) existing movie or modifying it."""
+    def get(self, movie):
+        """
+        Get a movie with title
+        ---
+        description: Get a movie by title
+        parameters:
+        - $ref: '#/components/parameters/movie'
+        responses:
+            '200':
+                description: Got movie details successfully
+                content:
+                    application/JSON:
+                        schema:
+                            $ref: '#/components/schemas/Movie'
+                        example:
+                            title: The Lord of the Rings The Fellowship of the Ring
+                            comments: Very good. I like.
+                            rating: 10
+                            writer: Fran Walsh, Philippa Boyens
+                            release_year: 2001
+                            genres: Fantasy
+                            actors:
+                                - first_name: Elijah
+                                  last_name: Wood
+                                - first_name: Ian
+                                  last_name: McKellen
+                            directors:
+                                - first_name: Peter
+                                  last_name: Jackson
+                            streaming_services:
+                                - name: HBO Max
+            '404':
+                description: Movie was not found from server
+        """
+        #db_movie = Movie.query.filter_by(title = moviename).first()
 
         #db_movie_dict = db_movie.__dict__
         #del db_movie_dict['_sa_instance_state']
-        return db_movie.serialize()
+        return movie.serialize()
     
-    def delete(self,moviename):
-        movie = db.session.query(Movie).filter(Movie.title == moviename).first()
+    def delete(self,movie):
+        #movie = db.session.query(Movie).filter(Movie.title == moviename).first()
         db.session.delete(movie)
         db.session.commit()
 
-class MovieAddition(Resource):
+    def put(self, movie):
+        """Modify existing movie"""
+        pass
+
+class MovieCollection(Resource):
+    """Resource for getting all movies or adding a new."""
     def post(self):
+        """
+        Method to post a new movie to the db
+        ---
+        description: Post a new movie
+        requestBody:
+            description: JSON formatted data
+            content:
+                application/JSON:
+                    schema:
+                        $ref: '#/components/schemas/Movie'
+                    example:
+                        title: The Lord of the Rings The Fellowship of the Ring
+                        comments: Very good. I like.
+                        rating: 10
+                        writer: Fran Walsh, Philippa Boyens
+                        release_year: 2001
+                        genres: Fantasy
+                        actors:
+                            - first_name: Elijah
+                              last_name: Wood
+                            - first_name: Ian
+                              last_name: McKellen
+                        directors:
+                            - first_name: Peter
+                              last_name: Jackson
+                        streaming_services:
+                            - name: HBO Max
+        responses:
+            '201':
+                description: Movie added successfully
+                headers:
+                    Location:
+                        description: URI of the movie added
+                        schema:
+                            type: string
+                        
+        """#TODO: add error responses once they are added to the method itself
         validator = Draft7Validator(
                 Movie.json_schema(),
                 format_checker=Draft7Validator.FORMAT_CHECKER
@@ -290,7 +378,7 @@ class MovieAddition(Resource):
                 )
             else:
                 #if the actor existed, we'll add refrerence to the existing entry
-                movie.director.append(db_director)
+                movie.directors.append(db_director)
 
         for streaming_service in to_be_checked_streaming_services:
             print(streaming_service)
@@ -309,12 +397,10 @@ class MovieAddition(Resource):
 
         db.session.add(movie)
         db.session.commit()
-        resp =Response()
-        resp.status=201
-        #TODO: add uri of created movie to the response
-        return resp
+        return Response(status=201, headers={"Location": api.url_for(MovieItem, movie=movie)})
     
-class ActorAddition(Resource):
+class ActorCollection(Resource):
+    """Resource for getting all actors and adding new."""
     def post(self):
 
         first = str(request.json["first_name"])
@@ -328,7 +414,8 @@ class ActorAddition(Resource):
         resp.status=201
         return resp
     
-class ActorCollection(Resource):    
+class ActorItem(Resource):
+    """Resource for getting and modifying existing actor."""    
     def delete(self,actorname):
         actor = db.session.query(Actor).filter(Actor.first_name == actorname.split(" ")[0],Actor.last_name == actorname.split(" ")[1]).first()
         db.session.delete(actor)
@@ -340,13 +427,19 @@ class ActorCollection(Resource):
         del db_actor_dict['_sa_instance_state']
         return jsonify(db_actor_dict)
 
+    def put(self, actorname):
+        """
+        Edit existing actor
+        """
+        pass
 
 class StreamingCollection(Resource):
     def put(self,moviename):
         pass
 
-api.add_resource(MovieCollection,"/Moviesearch/<moviename>/")
-api.add_resource(MovieAddition,"/Movie/")
-api.add_resource(ActorAddition,"/Actor/")
-api.add_resource(ActorCollection,"/Actorsearch/<actorname>/")
-api.add_resource(StreamingCollection,"/Streaming/<moviename>/")
+app.url_map.converters["movie"] = MovieConverter
+api.add_resource(MovieItem,"/movie/<movie:movie>/") 
+api.add_resource(MovieCollection,"/movie/")
+api.add_resource(ActorCollection,"/actor/")
+api.add_resource(ActorItem,"/actor/<actorname>/")
+api.add_resource(StreamingCollection,"/streaming/<movie:movie>/")

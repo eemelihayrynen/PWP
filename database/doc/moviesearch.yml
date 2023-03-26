@@ -1,0 +1,92 @@
+openapi: 3.0.3
+servers:
+- url: /
+info:
+  title: Moviesearch
+  version: 0.0.1
+  description: |
+    Documentation for our moviesearch API
+  termsOfService: http://we.do-not-have.net
+  contact:
+    url: http://we.do-not-have.net
+    email: email@adress.fi
+    name: Contacts
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+    
+components:
+  schemas:
+    Movie:
+      type: object
+      properties:
+        actors:
+          $ref: '#/components/schemas/Actor'
+          description: List of actors
+        comments:
+          description: Comments in one string
+          type: string
+        directors:
+          $ref: '#/components/schemas/Director'
+          description: List of directors
+        genres:
+          description: Genres in one string
+          type: string
+        rating:
+          description: Rating from imdb
+          type: number
+        release_year:
+          description: Year of the original release
+          type: integer
+        streaming_services:
+          $ref: '#/components/schemas/StreamingService'
+          description: List of streaming services
+        title:
+          description: Name of the movie
+          type: string
+        writer:
+          description: Writer
+          type: string
+      required:
+        - title
+    Actor:
+      type: object
+      properties:
+        first_name:
+          description: First name
+          type: string
+        last_name:
+          description: Last name
+          type: string
+      required:
+      - first_name
+      - last_name
+    Director:
+      type: object
+      properties:
+        first_name:
+          description: First name
+          type: string
+        last_name:
+          description: Last name
+          type: string
+      required:
+      - first_name
+      - last_name
+    StreamingService:
+      type: object
+      properties:
+        name:
+          description: Name of the service
+          type: string
+      required:
+      - name
+  parameters:
+    movie:
+      description: Movie title
+      in: path
+      name: movie
+      required: true
+      schema:
+        type: string
+
