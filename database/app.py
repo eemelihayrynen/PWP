@@ -3,6 +3,7 @@ from flask import Flask, Response, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
+from sqlalchemy.exc import IntegrityError
 from flask_restful import Api, Resource
 #from marshmallow import Schema, fields
 from jsonschema import validate, ValidationError, Draft7Validator
@@ -165,7 +166,7 @@ class Actor(db.Model):
     def deserialize(self, doc):
         self.first_name = doc["first_name"]
         self.last_name = doc["last_name"]
-        pass
+        
         
     @staticmethod
     def json_schema():
@@ -309,6 +310,8 @@ class MovieItem(Resource):
 
     def put(self, movie):
         """Modify existing movie"""
+        #TODO TEST THIS METHOD
+
         if not request.json:
             raise UnsupportedMediaType
         try:
@@ -323,7 +326,7 @@ class MovieItem(Resource):
         except IntegrityError:
             raise Conflict(
                 409,
-                description="Movie with name '{name}' alreadt exists.".format(
+                description="Identical movie already exists.".format(
                 **request.json
                 )
             )
@@ -476,14 +479,55 @@ class ActorItem(Resource):
         return jsonify(db_actor_dict)
 
     def put(self, actorname):
+        #TODO TEST THIS METHOD
+
         """
         Edit existing actor
         """
-        pass
+
+        if not request.json:
+            raise UnsupportedMediaType
+        try:
+            validate(request.json, Actor.json_schema())
+        except ValidationError as e:
+            raise BadRequest(description=str(e))
+        actorname.deserialize(request.json)
+        try:
+            db.session.add(actorname)
+            db.session.commit()
+        
+        except IntegrityError:
+            raise Conflict(
+                409,
+                description="Identical actor already exists.".format(
+                **request.json
+                )
+            )
+        return Response(status=204)
 
 class StreamingCollection(Resource):
-    def put(self,moviename):
-        pass
+    def put(self,streamingservice):
+        
+        if not request.json:
+            raise UnsupportedMediaType
+        try:
+            validate(request.json, StreamingService.json_schema())
+        except ValidationError as e:
+            raise BadRequest(description=str(e))
+        streamingservice.deserialize(request.json)
+        try:
+            db.session.add(streamingservice)
+            db.session.commit()
+        
+        except IntegrityError:
+            raise Conflict(
+                409,
+                description="Identical streamingservice already exists.".format(
+                **request.json
+                )
+            )
+        return Response(status=204)
+        
 
 app.url_map.converters["movie"] = MovieConverter
 api.add_resource(MovieItem,"/movie/<movie:movie>/") 
