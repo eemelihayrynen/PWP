@@ -322,7 +322,7 @@ class MovieItem(Resource):
         try:
             db.session.add(movie)
             db.session.commit()
-        
+        #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
         except IntegrityError:
             raise Conflict(
                 409,
@@ -449,40 +449,138 @@ class MovieCollection(Resource):
         db.session.add(movie)
         db.session.commit()
         return Response(status=201, headers={"Location": api.url_for(MovieItem, movie=movie)})
-    
+
+class ActorConverter(BaseConverter):
+    def to_python(self, value):
+        db_actor = Actor.query.filter_by(first_name = value.split(" ")[0],last_name = value.split(" ")[1]).first()
+        if db_actor is None:
+            raise NotFound
+        return db_actor
+        
+    def to_url(self, value):
+        print(value)
+        return value.first_name + " " + value.last_name
 class ActorCollection(Resource):
     """Resource for getting all actors and adding new."""
     def post(self):
+        """
+        Add new actor to the database.
+        ---
+        description: Post new actor to the database
+        requestBody:
+            description: JSON formatted data
+            content:
+                application/JSON:
+                    schema:
+                        $ref: '#/components/schemas/Actor'
+                    example:
+                        fist_name: Scarlett
+                        last_name: Johansson
+        responses:
+            '201':
+                description: Actor added successfully
+                headers:
+                    Location:
+                        description: URI of the actor added
+                        schema:
+                            type: string
+            '409':
+                description: Identical actor exists
+        """
 
         first = str(request.json["first_name"])
         last = str(request.json["last_name"])
         actor = Actor(
             first_name=first, last_name=last
         )
-        db.session.add(actor)
-        db.session.commit()
-        resp =Response()
-        resp.status=201
-        return resp
+        try:
+            db.session.add(actor)
+            db.session.commit()
+        #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
+        except IntegrityError:
+            raise Conflict(
+                409,
+                description="Identical actor already exists.".format(
+                **request.json
+                )
+            )
+        return Response(status=201, headers={"Location": api.url_for(ActorItem, actorname=actor)})
     
 class ActorItem(Resource):
     """Resource for getting and modifying existing actor."""    
     def delete(self,actorname):
-        actor = db.session.query(Actor).filter(Actor.first_name == actorname.split(" ")[0],Actor.last_name == actorname.split(" ")[1]).first()
-        db.session.delete(actor)
+        """
+        Method for deleting actor
+        ---
+        description: Delete actor by name
+        parameters:
+          - $ref: '#/components/parameters/actorname'
+        responses:
+            '204':
+                description: Deleted actor successfully
+            '404':
+                description: Actor was not found
+        """
+        db.session.delete(actorname)
         db.session.commit()
+        return Response(status=204)
     
     def get(self,actorname):
-        db_actor = Actor.query.filter_by(first_name = actorname.split(" ")[0],last_name = actorname.split(" ")[1]).first()
-        db_actor_dict = db_actor.__dict__
-        del db_actor_dict['_sa_instance_state']
-        return jsonify(db_actor_dict)
+        """
+        Get actor by name
+        ---
+        description: Get actor by name
+        parameters:
+          - $ref: '#/components/parameters/actorname'
+        responses:
+            '204':
+                description: Got actor successfully
+                content:
+                    application/JSON:
+                        schema:
+                            $ref: '#/components/schemas/Actor'
+                        example:
+                            first_name: Emma
+                            last_name: Watson
+            '404':
+                description: Actor was not found
+        """
+        #db_actor = Actor.query.filter_by(first_name = actorname.split(" ")[0],last_name = actorname.split(" ")[1]).first()
+        #db_actor_dict = db_actor.__dict__
+        #del db_actor_dict['_sa_instance_state']
+        print(actorname)
+        return actorname.serialize()
 
     def put(self, actorname):
         #TODO TEST THIS METHOD
 
         """
         Edit existing actor
+        ---
+        description: Edit actor in the database
+        parameters:
+          - $ref: '#/components/parameters/actorname'
+        requestBody:
+            description: JSON formatted data
+            content:
+                application/JSON:
+                    schema:
+                        $ref: '#/components/schemas/Actor'
+                    example:
+                        fist_name: Scarlett
+                        last_name: Johansson
+        responses:
+            '204':
+                description: Actor modified successfully
+                headers:
+                    Location:
+                        description: URI of the actor modified
+                        schema:
+                            type: string
+            '409':
+                description: Identical actor exists
+            '404':
+                description: Actor was not found
         """
 
         if not request.json:
@@ -491,11 +589,13 @@ class ActorItem(Resource):
             validate(request.json, Actor.json_schema())
         except ValidationError as e:
             raise BadRequest(description=str(e))
+        
         actorname.deserialize(request.json)
+
         try:
             db.session.add(actorname)
             db.session.commit()
-        
+        #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
         except IntegrityError:
             raise Conflict(
                 409,
@@ -503,10 +603,15 @@ class ActorItem(Resource):
                 **request.json
                 )
             )
-        return Response(status=204)
+        return Response(status=204, headers={"Location": api.url_for(ActorItem, actorname=actorname)})
 
 class StreamingCollection(Resource):
     def put(self,streamingservice):
+        """
+        Modify
+        ---
+
+        """
         
         if not request.json:
             raise UnsupportedMediaType
@@ -518,7 +623,7 @@ class StreamingCollection(Resource):
         try:
             db.session.add(streamingservice)
             db.session.commit()
-        
+        #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
         except IntegrityError:
             raise Conflict(
                 409,
@@ -530,8 +635,9 @@ class StreamingCollection(Resource):
         
 
 app.url_map.converters["movie"] = MovieConverter
+app.url_map.converters["actorname"] = ActorConverter
 api.add_resource(MovieItem,"/movie/<movie:movie>/") 
 api.add_resource(MovieCollection,"/movie/")
 api.add_resource(ActorCollection,"/actor/")
-api.add_resource(ActorItem,"/actor/<actorname>/")
+api.add_resource(ActorItem,"/actor/<actorname:actorname>/")
 api.add_resource(StreamingCollection,"/streaming/<movie:movie>/")

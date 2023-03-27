@@ -89,4 +89,10 @@ components:
       required: true
       schema:
         type: string
-
+    actorname:
+      description: Name of the actor in one line
+      in: path
+      name: actorname
+      required: true
+      schema:
+        type: string
