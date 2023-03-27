@@ -87,6 +87,22 @@ class Movie(db.Model):
             "streaming_services": streaming_services,
         }
     
+    def deserialize(self, doc):
+        #TODO a way to desearialize actors, directors, streamingservices
+        # 
+        # for a in doc["actors"]:
+        #   a.deserialize()
+        #   
+
+
+        self.id = doc["id"]
+        self.title =doc["title"]
+        self.comments = doc["comments"]
+        self.rating = doc["rating"]
+        self.writer = doc["writer"]
+        self.release_year = doc["release_year"]
+        self.genres = doc["genres"]
+    
     @staticmethod
     def json_schema():
         schema = {
@@ -145,6 +161,11 @@ class Actor(db.Model):
             "first_name": self.first_name,
             "last_name": self.last_name
         }
+    
+    def deserialize(self, doc):
+        self.first_name = doc["first_name"]
+        self.last_name = doc["last_name"]
+        pass
         
     @staticmethod
     def json_schema():
@@ -177,6 +198,11 @@ class Director(db.Model):
             "first_name": self.first_name,
             "last_name": self.last_name
         }
+    
+    def deserialize(self, doc):
+        self.first_name = doc["first_name"]
+        self.last_name = doc["last_name"]
+
 
     @staticmethod
     def json_schema():
@@ -207,6 +233,9 @@ class StreamingService(db.Model):
         return {
             "name": self.name,
         }
+    
+    def deserialize(self, doc):
+        self.name = doc["name"]
     
     @staticmethod
     def json_schema():
@@ -280,7 +309,26 @@ class MovieItem(Resource):
 
     def put(self, movie):
         """Modify existing movie"""
-        pass
+        if not request.json:
+            raise UnsupportedMediaType
+        try:
+            validate(request.json, Movie.json_schema())
+        except ValidationError as e:
+            raise BadRequest(description=str(e))
+        movie.deserialize(request.json)
+        try:
+            db.session.add(movie)
+            db.session.commit()
+        
+        except IntegrityError:
+            raise Conflict(
+                409,
+                description="Movie with name '{name}' alreadt exists.".format(
+                **request.json
+                )
+            )
+
+        return Response(status=204)
 
 class MovieCollection(Resource):
     """Resource for getting all movies or adding a new."""
