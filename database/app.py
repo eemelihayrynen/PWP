@@ -304,12 +304,65 @@ class MovieItem(Resource):
         return movie.serialize()
     
     def delete(self,movie):
+        """
+        Method for deleting a movie
+        ---
+        description: Delete movie by name
+        parameters:
+          - $ref: '#/components/schemas/Movie'
+        responses:
+            '204':
+                description: Deleted movie successfully
+            '404':
+                description: Movie was not found
+        """
         #movie = db.session.query(Movie).filter(Movie.title == moviename).first()
         db.session.delete(movie)
         db.session.commit()
 
     def put(self, movie):
-        """Modify existing movie"""
+        """
+        Modify existing movie
+        ---
+        description: Edit movie in the database
+        parameters:
+          - $ref: '#/components/schemas/movie'
+        requestBody:
+            description: JSON formatted data
+            content:
+                application/JSON:
+                    schema:
+                        $ref: '#/components/schemas/Movie'
+                    example:
+                        title: The Lord of the Rings The Fellowship of the Ring
+                        comments: Very good. I like.
+                        rating: 10
+                        writer: Fran Walsh, Philippa Boyens
+                        release_year: 2001
+                        genres: Fantasy
+                        actors:
+                            - first_name: Elijah
+                              last_name: Wood
+                            - first_name: Ian
+                              last_name: McKellen
+                        directors:
+                            - first_name: Peter
+                              last_name: Jackson
+                        streaming_services:
+                            - name: HBO Max
+        responses:
+            '204':
+                description: Movie modified successfully
+                headers:
+                    Location:
+                        description: URI of the movie modified
+                        schema:
+                            type: string
+            '409':
+                description: Identical Movie exists
+            '404':
+                description: Movie was not found
+        """
         #TODO TEST THIS METHOD
 
         if not request.json:
