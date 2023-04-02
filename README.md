@@ -33,7 +33,16 @@ To start the server after population, simply run:
 
     flask run
 
+## Testing the API
 
+To run the functional tests, run:
+
+    pytest
+    
+And for test coverage, run:
+       
+    pytest --cov-report term-missing --cov=app
+    
 ## API Documentation
 
 The documentation page of the API can be access when the flask server is running from the following address:
