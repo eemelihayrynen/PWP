@@ -60,6 +60,9 @@ class Movie(db.Model):
     writer = db.Column(db.String(256), nullable=True)
     release_year = db.Column(db.Integer, nullable=True)
     genres = db.Column(db.String(256), nullable=True)
+    
+    #TODO: This should make sure that each movie is unique, still needs to be tested thoroughly before using it.
+    #duplication_test = db.UniqueConstraint('title', 'release_year', 'directors')
 
     actors = db.relationship("Actor", secondary=MovieActorsAssociation, back_populates='movies')
     directors = db.relationship("Director", secondary=MovieDirectorsAssociation, back_populates='movies')
