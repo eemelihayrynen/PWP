@@ -370,14 +370,70 @@ class MovieItem(Resource):
 
         if not request.json:
             raise UnsupportedMediaType
+
         try:
-            validate(request.json, Movie.json_schema())
+            validate(request.json,Movie.json_schema())
         except ValidationError as e:
             raise BadRequest(description=str(e))
-        movie.deserialize(request.json)
+
+        movie.title = str(request.json["title"])
+        movie.comments = str(request.json["comments"])
+        movie.rating = float(request.json["rating"])
+        movie.writer = str(request.json["writer"])
+        movie.release_year = int(request.json["release_year"])
+        movie.genres = str(request.json["genres"])
+        to_be_checked_actors = list(request.json["actors"])
+        to_be_checked_directors = list(request.json["directors"])
+        to_be_checked_streaming_services = list(request.json["streaming_services"])
+        
+        for actor in to_be_checked_actors:
+            print(actor)
+            db_actor = Actor.query.filter_by(first_name = actor["first_name"],last_name = actor["last_name"]).first()
+            if db_actor == None:
+                #no actor found, so let's add a new one
+                print("Actor not in database")
+                movie.actors.append(
+                    Actor(
+                        first_name=actor["first_name"], last_name=actor["last_name"]
+                        )
+                )
+            else:
+                #if the actor existed, we'll add refrerence to the existing entry
+                movie.actors.append(db_actor)
+        
+        for director in to_be_checked_directors:
+            print(director)
+            db_director = Director.query.filter_by(first_name = director["first_name"],last_name = director["last_name"]).first()
+            if db_director == None:
+                #no director found, so let's add a new one
+                print("Director not in database")
+                movie.directors.append(
+                    Director(
+                        first_name=director["first_name"], last_name=director["last_name"]
+                        )
+                )
+            else:
+                #if the director existed, we'll add refrerence to the existing entry
+                movie.directors.append(db_director)
+
+        for streaming_service in to_be_checked_streaming_services:
+            print(streaming_service)
+            db_streaming_service = StreamingService.query.filter_by(name = streaming_service["name"]).first()
+            if db_streaming_service == None:
+                #no streaming_service found, so let's add a new one
+                print("streaming_service not in database")
+                movie.streaming_services.append(
+                    StreamingService(
+                        name=streaming_service["name"]
+                        )
+                )
+            else:
+                #if the streaming_service existed, we'll add refrerence to the existing entry
+                movie.streaming_services.append(db_streaming_service)
         try:
             db.session.add(movie)
             db.session.commit()
+
         #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
         except IntegrityError:
             raise Conflict(
@@ -386,7 +442,7 @@ class MovieItem(Resource):
                 **request.json
                 )
             )
-
+        
         return Response(status=204)
 
 class MovieCollection(Resource):
