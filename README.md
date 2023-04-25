@@ -19,7 +19,7 @@ We recommend using Python virtual environments to run the API code.
         pip install -r requirements.txt
 
 ## Populating the database
-The database can be populated using the script inside the database folder (currently adds only one entry). Example of moviesearch.db can be found under database/instance.
+The database can be populated using the script inside the database folder adds top 250 imdb movies. Example of moviesearch.db can be found under database/instance.
 
     python populate.py
 
