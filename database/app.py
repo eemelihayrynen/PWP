@@ -1,3 +1,9 @@
+'''
+Main code for our Movie search API
+Sources for code:
+https://lovelace.oulu.fi/ohjelmoitava-web/ohjelmoitava-web/
+https://github.com/enkwolf/pwp-course-sensorhub-api-example
+'''
 import json
 from flask import Flask, Response, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -60,25 +66,35 @@ class Movie(db.Model):
     writer = db.Column(db.String(256), nullable=True)
     release_year = db.Column(db.Integer, nullable=True)
     genres = db.Column(db.String(256), nullable=True)
-    
-    #TODO: This should make sure that each movie is unique, still needs to be tested thoroughly before using it.
+
+    #TODO: This should make sure that each movie is unique,
+    #still needs to be tested thoroughly before using it.
     #duplication_test = db.UniqueConstraint('title', 'release_year', 'directors')
 
     actors = db.relationship("Actor", secondary=MovieActorsAssociation, back_populates='movies')
-    directors = db.relationship("Director", secondary=MovieDirectorsAssociation, back_populates='movies')
-    streaming_services = db.relationship("StreamingService", secondary=MovieStreamingServicesAssociation, back_populates='movies')
+    directors = db.relationship(
+        "Director",
+        secondary=MovieDirectorsAssociation,
+        back_populates='movies'
+        )
+    streaming_services = db.relationship(
+        "StreamingService",
+        secondary=MovieStreamingServicesAssociation,
+        back_populates='movies'
+        )
 
     def serialize(self):
+        '''Serialize function for Movie resource'''
         actors = []
         #TODO: convert these loops to shorter code e.g. with list comprehension
-        for a in self.actors:
-            actors.append(a.serialize())
+        for actor in self.actors:
+            actors.append(actor.serialize())
         directors = []
-        for d in self.directors:
-            directors.append(d.serialize())
+        for director in self.directors:
+            directors.append(director.serialize())
         streaming_services = []
-        for s in self.streaming_services:
-            streaming_services.append(s.serialize())
+        for streaming_service in self.streaming_services:
+            streaming_services.append(streaming_service.serialize())
         return {
             "title": self.title,
             "comments": self.comments,
@@ -90,13 +106,14 @@ class Movie(db.Model):
             "directors": directors,
             "streaming_services": streaming_services,
         }
-    
+
     def deserialize(self, doc):
+        '''De-serialize function for Movie resource'''
         #TODO a way to desearialize actors, directors, streamingservices
-        # 
+        #
         # for a in doc["actors"]:
         #   a.deserialize()
-        #   
+        #
 
 
         self.id = doc["id"]
@@ -106,12 +123,14 @@ class Movie(db.Model):
         self.writer = doc["writer"]
         self.release_year = doc["release_year"]
         self.genres = doc["genres"]
-    
+
     @staticmethod
     def json_schema():
+        '''JSON schema function for Movie schema validation'''
         schema = {
             "type": "object",
-            "required": ["title"] #TODO: decide if actors, etc. are required and match to db definitions
+            "required": ["title"]
+            #TODO: decide if actors, etc. are required and match to db definitions
         }
         props = schema["properties"] = {}
         props["title"] = {
@@ -157,22 +176,24 @@ class Actor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(128), nullable=False)
     last_name = db.Column(db.String(128), nullable=False)
-    
+
     movies = db.relationship("Movie", secondary=MovieActorsAssociation, back_populates='actors')
 
     def serialize(self):
+        '''Serialize function for Actor resource'''
         return {
             "first_name": self.first_name,
             "last_name": self.last_name
         }
-    
+
     def deserialize(self, doc):
+        '''De-serialize function for Actor resource'''
         self.first_name = doc["first_name"]
         self.last_name = doc["last_name"]
-        
-        
+
     @staticmethod
     def json_schema():
+        '''JSON schema function for Actor schema validation'''
         schema = {
             "$id": "/schemas/actor",
             "type": "object",
@@ -195,21 +216,27 @@ class Director(db.Model):
     first_name = db.Column(db.String(128), nullable=False)
     last_name = db.Column(db.String(128), nullable=False)
 
-    movies = db.relationship("Movie", secondary=MovieDirectorsAssociation, back_populates='directors')
+    movies = db.relationship(
+        "Movie",
+        secondary=MovieDirectorsAssociation,
+        back_populates='directors'
+        )
 
     def serialize(self):
+        '''Serialize function for Director resource'''
         return {
             "first_name": self.first_name,
             "last_name": self.last_name
         }
-    
+
     def deserialize(self, doc):
+        '''De-serialize function for Director resource'''
         self.first_name = doc["first_name"]
         self.last_name = doc["last_name"]
 
-
     @staticmethod
     def json_schema():
+        '''JSON schema function for Director schema validation'''
         schema = {
             "$id": "/schemas/director",
             "type": "object",
@@ -231,18 +258,25 @@ class StreamingService(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(256), nullable=False)
 
-    movies = db.relationship("Movie", secondary=MovieStreamingServicesAssociation, back_populates='streaming_services')
+    movies = db.relationship(
+        "Movie",
+        secondary=MovieStreamingServicesAssociation,
+        back_populates='streaming_services'
+        )
 
     def serialize(self):
+        '''Serialize function for StreamingService resource'''
         return {
             "name": self.name,
         }
-    
+
     def deserialize(self, doc):
+        '''De-serialize function for StreamingService resource'''
         self.name = doc["name"]
-    
+
     @staticmethod
     def json_schema():
+        '''JSON schema function for StreamingService schema validation'''
         schema = {
             "$id": "/schemas/streaming_services",
             "type": "object",
@@ -254,14 +288,15 @@ class StreamingService(db.Model):
             "type": "string"
         }
         return schema
-    
+
 class MovieConverter(BaseConverter):
+    '''Helper class to get Movie from url and url from Movie'''
     def to_python(self, value):
         db_movie = Movie.query.filter_by(title=value).first()
         if db_movie is None:
             raise NotFound
         return db_movie
-        
+
     def to_url(self, value):
         return value.title
 class MovieItem(Resource):
@@ -305,7 +340,7 @@ class MovieItem(Resource):
         #db_movie_dict = db_movie.__dict__
         #del db_movie_dict['_sa_instance_state']
         return movie.serialize()
-    
+
     def delete(self,movie):
         """
         Method for deleting a movie
@@ -373,8 +408,8 @@ class MovieItem(Resource):
 
         try:
             validate(request.json,Movie.json_schema())
-        except ValidationError as e:
-            raise BadRequest(description=str(e))
+        except ValidationError as v_e:
+            raise BadRequest(description=str(v_e)) from v_e
 
         movie.title = str(request.json["title"])
         movie.comments = str(request.json["comments"])
@@ -385,11 +420,14 @@ class MovieItem(Resource):
         to_be_checked_actors = list(request.json["actors"])
         to_be_checked_directors = list(request.json["directors"])
         to_be_checked_streaming_services = list(request.json["streaming_services"])
-        
+
         for actor in to_be_checked_actors:
             print(actor)
-            db_actor = Actor.query.filter_by(first_name = actor["first_name"],last_name = actor["last_name"]).first()
-            if db_actor == None:
+            db_actor = Actor.query.filter_by(
+                first_name = actor["first_name"],
+                last_name = actor["last_name"]
+                ).first()
+            if db_actor is None:
                 #no actor found, so let's add a new one
                 print("Actor not in database")
                 movie.actors.append(
@@ -400,11 +438,14 @@ class MovieItem(Resource):
             else:
                 #if the actor existed, we'll add refrerence to the existing entry
                 movie.actors.append(db_actor)
-        
+
         for director in to_be_checked_directors:
             print(director)
-            db_director = Director.query.filter_by(first_name = director["first_name"],last_name = director["last_name"]).first()
-            if db_director == None:
+            db_director = Director.query.filter_by(
+                first_name = director["first_name"],
+                last_name = director["last_name"]
+                ).first()
+            if db_director is None:
                 #no director found, so let's add a new one
                 print("Director not in database")
                 movie.directors.append(
@@ -418,8 +459,10 @@ class MovieItem(Resource):
 
         for streaming_service in to_be_checked_streaming_services:
             print(streaming_service)
-            db_streaming_service = StreamingService.query.filter_by(name = streaming_service["name"]).first()
-            if db_streaming_service == None:
+            db_streaming_service = StreamingService.query.filter_by(
+                name = streaming_service["name"]
+                ).first()
+            if db_streaming_service is None:
                 #no streaming_service found, so let's add a new one
                 print("streaming_service not in database")
                 movie.streaming_services.append(
@@ -435,14 +478,9 @@ class MovieItem(Resource):
             db.session.commit()
 
         #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
-        except IntegrityError:
-            raise Conflict(
-                409,
-                description="Identical movie already exists.".format(
-                **request.json
-                )
-            )
-        
+        except IntegrityError as i_e:
+            raise Conflict(409, "Identical movie already exists.".format(**request.json)) from i_e
+
         return Response(status=204)
 
 class MovieCollection(Resource):
@@ -494,8 +532,8 @@ class MovieCollection(Resource):
             validator.validate(request.json)
 
         except ValidationError as error_message:
-            raise BadRequest(description=str(error_message))
-        
+            raise BadRequest(description=str(error_message)) from error_message
+
         #TODO: create deserialize method to Movie class to simplify this
         title = str(request.json["title"])
         comments = str(request.json["comments"])
@@ -508,14 +546,23 @@ class MovieCollection(Resource):
         to_be_checked_streaming_services = list(request.json["streaming_services"])
         #TODO: check that the movie doesn't exist yet.
         movie = Movie(
-            title=title, comments=comments, rating=rating, writer=writer, release_year=release_year, genres=genres, actors=[]
+            title=title,
+            comments=comments,
+            rating=rating,
+            writer=writer,
+            release_year=release_year,
+            genres=genres,
+            actors=[]
         )
         #print(to_be_checked_actors)
         for actor in to_be_checked_actors:
             print(actor)
-            db_actor = Actor.query.filter_by(first_name = actor["first_name"],last_name = actor["last_name"]).first()
+            db_actor = Actor.query.filter_by(
+                first_name = actor["first_name"],
+                last_name = actor["last_name"]
+                ).first()
             print("ass")
-            if db_actor == None:
+            if db_actor is None:
                 #no actor found, so let's add a new one
                 print("Actor not in database")
                 movie.actors.append(
@@ -525,13 +572,15 @@ class MovieCollection(Resource):
                 )
             else:
                 #if the actor existed, we'll add refrerence to the existing entry
-                
                 movie.actors.append(db_actor)
-        
+
         for director in to_be_checked_directors:
             print(director)
-            db_director = Director.query.filter_by(first_name = director["first_name"],last_name = director["last_name"]).first()
-            if db_director == None:
+            db_director = Director.query.filter_by(
+                first_name = director["first_name"],
+                last_name = director["last_name"]
+                ).first()
+            if db_director is None:
                 #no director found, so let's add a new one
                 print("Director not in database")
                 movie.directors.append(
@@ -545,8 +594,10 @@ class MovieCollection(Resource):
 
         for streaming_service in to_be_checked_streaming_services:
             print(streaming_service)
-            db_streaming_service = StreamingService.query.filter_by(name = streaming_service["name"]).first()
-            if db_streaming_service == None:
+            db_streaming_service = StreamingService.query.filter_by(
+                name = streaming_service["name"]
+                ).first()
+            if db_streaming_service is None:
                 #no streaming_service found, so let's add a new one
                 print("streaming_service not in database")
                 movie.streaming_services.append(
@@ -563,12 +614,16 @@ class MovieCollection(Resource):
         return Response(status=201, headers={"Location": api.url_for(MovieItem, movie=movie)})
 
 class ActorConverter(BaseConverter):
+    '''Helper class to get Actor from url and url from actor'''
     def to_python(self, value):
-        db_actor = Actor.query.filter_by(first_name = value.split(" ")[0],last_name = value.split(" ")[1]).first()
+        db_actor = Actor.query.filter_by(
+            first_name = value.split(" ")[0],
+            last_name = value.split(" ")[1]
+            ).first()
         if db_actor is None:
             raise NotFound
         return db_actor
-        
+
     def to_url(self, value):
         print(value)
         return value.first_name + " " + value.last_name
@@ -609,15 +664,15 @@ class ActorCollection(Resource):
             db.session.add(actor)
             db.session.commit()
         #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
-        except IntegrityError:
+        except IntegrityError as i_e:
             raise Conflict(
                 409,
-                description="Identical actor already exists.".format(
+                "Identical actor already exists.".format(
                 **request.json
                 )
-            )
+            ) from i_e
         return Response(status=201, headers={"Location": api.url_for(ActorItem, actorname=actor)})
-    
+
 class ActorItem(Resource):
     """Resource for getting and modifying existing actor."""    
     def delete(self,actorname):
@@ -636,7 +691,7 @@ class ActorItem(Resource):
         db.session.delete(actorname)
         db.session.commit()
         return Response(status=204)
-    
+
     def get(self,actorname):
         """
         Get actor by name
@@ -657,9 +712,6 @@ class ActorItem(Resource):
             '404':
                 description: Actor was not found
         """
-        #db_actor = Actor.query.filter_by(first_name = actorname.split(" ")[0],last_name = actorname.split(" ")[1]).first()
-        #db_actor_dict = db_actor.__dict__
-        #del db_actor_dict['_sa_instance_state']
         print(actorname)
         return actorname.serialize()
 
@@ -699,56 +751,58 @@ class ActorItem(Resource):
             raise UnsupportedMediaType
         try:
             validate(request.json, Actor.json_schema())
-        except ValidationError as e:
-            raise BadRequest(description=str(e))
-        
+        except ValidationError as v_e:
+            raise BadRequest(description=str(v_e)) from v_e
+
         actorname.deserialize(request.json)
 
         try:
             db.session.add(actorname)
             db.session.commit()
         #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
-        except IntegrityError:
+        except IntegrityError as i_e:
             raise Conflict(
                 409,
-                description="Identical actor already exists.".format(
+                "Identical actor already exists.".format(
                 **request.json
                 )
+            ) from i_e
+        return Response(
+            status=204,
+            headers={"Location": api.url_for(ActorItem, actorname=actorname)}
             )
-        return Response(status=204, headers={"Location": api.url_for(ActorItem, actorname=actorname)})
 
 class StreamingCollection(Resource):
+    """Resource for streaming services."""
     def put(self,streamingservice):
         """
         Modify
         ---
 
         """
-        
         if not request.json:
             raise UnsupportedMediaType
         try:
             validate(request.json, StreamingService.json_schema())
-        except ValidationError as e:
-            raise BadRequest(description=str(e))
+        except ValidationError as v_e:
+            raise BadRequest(description=str(v_e)) from v_e
         streamingservice.deserialize(request.json)
         try:
             db.session.add(streamingservice)
             db.session.commit()
         #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
-        except IntegrityError:
+        except IntegrityError as i_e:
             raise Conflict(
                 409,
-                description="Identical streamingservice already exists.".format(
+                "Identical streamingservice already exists.".format(
                 **request.json
                 )
-            )
+            ) from i_e
         return Response(status=204)
-        
 
 app.url_map.converters["movie"] = MovieConverter
 app.url_map.converters["actorname"] = ActorConverter
-api.add_resource(MovieItem,"/movie/<movie:movie>/") 
+api.add_resource(MovieItem,"/movie/<movie:movie>/")
 api.add_resource(MovieCollection,"/movie/")
 api.add_resource(ActorCollection,"/actor/")
 api.add_resource(ActorItem,"/actor/<actorname:actorname>/")
