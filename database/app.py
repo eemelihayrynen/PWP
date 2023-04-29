@@ -59,6 +59,9 @@ MovieStreamingServicesAssociation = db.Table('MovieStreamingServicesAssosiation'
 
 class Movie(db.Model):
     """Database definition and utility functions for streaming movies"""
+    __table_args__ = (
+        db.UniqueConstraint("title", "release_year"),
+    )
     id = db.Column(db.Integer, primary_key = True)
     title = db.Column(db.String(256), nullable=False)
     comments = db.Column(db.String(256), nullable=True)
@@ -66,10 +69,6 @@ class Movie(db.Model):
     writer = db.Column(db.String(256), nullable=True)
     release_year = db.Column(db.Integer, nullable=True)
     genres = db.Column(db.String(256), nullable=True)
-
-    #TODO: This should make sure that each movie is unique,
-    #still needs to be tested thoroughly before using it.
-    #duplication_test = db.UniqueConstraint('title', 'release_year', 'directors')
 
     actors = db.relationship("Actor", secondary=MovieActorsAssociation, back_populates='movies')
     directors = db.relationship(
@@ -83,8 +82,11 @@ class Movie(db.Model):
         back_populates='movies'
         )
 
-    def serialize(self):
+    def serialize(self, short_form=False):
         '''Serialize function for Movie resource'''
+        if short_form:
+            return {"title": self.title}
+
         actors = []
         #TODO: convert these loops to shorter code e.g. with list comprehension
         for actor in self.actors:
@@ -94,7 +96,7 @@ class Movie(db.Model):
             directors.append(director.serialize())
         streaming_services = []
         for streaming_service in self.streaming_services:
-            streaming_services.append(streaming_service.serialize())
+            streaming_services.append(streaming_service.serialize(short_form=True))
         return {
             "title": self.title,
             "comments": self.comments,
@@ -159,15 +161,18 @@ class Movie(db.Model):
         }
         props["actors"] = {
             "description": "List of actors",
-            "$def": "#Actor.json_schema()"#TODO: this reference doesn't work
+            "type": "array",
+            "items": Actor.json_schema()
         }
         props["directors"] = {
             "description": "List of directors",
-            "$def": "#Director.json_schema()"#TODO: this reference doesn't work
+            "type": "array",
+            "items": Director.json_schema()
         }
         props["streaming_services"] = {
             "description": "List of streaming services",
-            "$def": "#StreamingService.json_schema()"#TODO: this reference doesn't work
+            "type": "array",
+            "items": StreamingService.json_schema()
         }
         return schema
 
@@ -264,10 +269,16 @@ class StreamingService(db.Model):
         back_populates='streaming_services'
         )
 
-    def serialize(self):
+    def serialize(self, short_form=False):
         '''Serialize function for StreamingService resource'''
+        if short_form:
+            return {"name": self.name}
+        movies = []
+        for movie in self.movies:
+            movies.append(movie.serialize(short_form=True))
         return {
             "name": self.name,
+            "movies": movies
         }
 
     def deserialize(self, doc):
@@ -477,9 +488,8 @@ class MovieItem(Resource):
             db.session.add(movie)
             db.session.commit()
 
-        #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
         except IntegrityError as i_e:
-            raise Conflict(409, "Identical movie already exists.".format(**request.json)) from i_e
+            raise Conflict(description="Identical movie already exists.") from i_e
 
         return Response(status=204)
 
@@ -521,8 +531,18 @@ class MovieCollection(Resource):
                         description: URI of the movie added
                         schema:
                             type: string
+            '400':
+                description: Bad request/Invalid JSON Schema
+            '409':
+                description: Identical Movie exists
                         
         """#TODO: add error responses once they are added to the method itself
+        try:
+            #DOC:If the request content type is not ``application/json``, this
+            # will raise a 400 Bad Request error.
+            request.json
+        except BadRequest as b_r:
+            raise UnsupportedMediaType(description="UnsupportedMediaType, JSON document required.") from b_r
         validator = Draft7Validator(
                 Movie.json_schema(),
                 format_checker=Draft7Validator.FORMAT_CHECKER
@@ -531,8 +551,8 @@ class MovieCollection(Resource):
             print("Trying to validate request json")
             validator.validate(request.json)
 
-        except ValidationError as error_message:
-            raise BadRequest(description=str(error_message)) from error_message
+        except ValidationError as v_e:
+            raise BadRequest(description=str(v_e)) from v_e
 
         #TODO: create deserialize method to Movie class to simplify this
         title = str(request.json["title"])
@@ -609,8 +629,14 @@ class MovieCollection(Resource):
                 #if the actor existed, we'll add refrerence to the existing entry
                 movie.streaming_services.append(db_streaming_service)
 
-        db.session.add(movie)
-        db.session.commit()
+        #db.session.add(movie)
+        #db.session.commit()
+
+        try:
+            db.session.add(movie)
+            db.session.commit()
+        except IntegrityError as i_e:
+            raise Conflict(description="Identical movie already exists.") from i_e
         return Response(status=201, headers={"Location": api.url_for(MovieItem, movie=movie)})
 
 class ActorConverter(BaseConverter):
@@ -663,14 +689,9 @@ class ActorCollection(Resource):
         try:
             db.session.add(actor)
             db.session.commit()
-        #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
+        #TODO: doesn't work since our database model allows duplicate actors, , and  others
         except IntegrityError as i_e:
-            raise Conflict(
-                409,
-                "Identical actor already exists.".format(
-                **request.json
-                )
-            ) from i_e
+            raise Conflict(description="Identical actor already exists.") from i_e
         return Response(status=201, headers={"Location": api.url_for(ActorItem, actorname=actor)})
 
 class ActorItem(Resource):
@@ -759,22 +780,111 @@ class ActorItem(Resource):
         try:
             db.session.add(actorname)
             db.session.commit()
-        #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
+        #TODO: doesn't work since our database model allows duplicate actors, , and  others
         except IntegrityError as i_e:
-            raise Conflict(
-                409,
-                "Identical actor already exists.".format(
-                **request.json
-                )
-            ) from i_e
+            raise Conflict(description="Identical actor already exists.") from i_e
         return Response(
             status=204,
             headers={"Location": api.url_for(ActorItem, actorname=actorname)}
             )
+    
+class StreamingConverter(BaseConverter):
+    '''Helper class to get Streaming service from url and url from streaming service'''
+    def to_python(self, value):
+        db_ss = StreamingService.query.filter_by(name = value).first()
+        if db_ss is None:
+            raise NotFound
+        return db_ss
+
+    def to_url(self, value):
+        print(value)
+        return value.name
 
 class StreamingCollection(Resource):
-    """Resource for streaming services."""
+    """Resource for creating new streaming service."""
+    def post(self):
+        """
+        Add new streaming service to the database. Does not permit adding movies to the service right now.
+        ---
+        description: Post new streaming service to the database
+        requestBody:
+            description: JSON formatted data
+            content:
+                application/JSON:
+                    schema:
+                        $ref: '#/components/schemas/StreamingService'
+                    example:
+                        name: Netflix
+        responses:
+            '201':
+                description: StreamingService added successfully
+                headers:
+                    Location:
+                        description: URI of the streaming service added
+                        schema:
+                            type: string
+            '409':
+                description: Identical streaming service exists
+        """
+        if not request.json:
+            raise UnsupportedMediaType(415, "UnsupportedMediaType, JSON document required.")
+        validator = Draft7Validator(
+                StreamingService.json_schema(),
+                format_checker=Draft7Validator.FORMAT_CHECKER
+                )
+        try:
+            #print("Trying to validate request json")
+            validator.validate(request.json)
+
+        except ValidationError as v_e:
+            raise BadRequest(description=str(v_e)) from v_e
+
+        name = str(request.json["name"])
+        streaming_service = StreamingService(
+            name=name
+        )
+        try:
+            db.session.add(streaming_service)
+            db.session.commit()
+        #TODO: doesn't work since our database model allows duplicate actors, , and  others
+        except IntegrityError as i_e:
+            raise Conflict(description="Identical streaming service already exists.") from i_e
+        return Response(status=201, headers={"Location": api.url_for(StreamingItem, streamingservice=streaming_service)})
+    
+    
+class StreamingItem(Resource):
+    """Resource for getting and modifying existing streaming service."""
+    def get(self, streamingservice):
+        """
+        Get a streaming service name and list of all titles in it.
+        ---
+        description: Get a streaming service name and list of all titles in it.
+        parameters:
+        - $ref: '#/components/parameters/streamingservice'
+        responses:
+            '200':
+                description: Got movie details successfully
+                content:
+                    application/JSON:
+                        schema:
+                            $ref: '#/components/schemas/StreamingService'
+                        example:
+                            name: Netflix
+                            movies:
+                                - movie:
+                                    title: Batman Begins
+                                - movie:
+                                    title: The Dark Knight
+                                - movie:
+                                    title: The Dark Knight Rises
+            '404':
+                description: Streaming service not found
+        """
+        print(streamingservice.name)
+        return streamingservice.serialize()
+
     def put(self,streamingservice):
+        #TODO: need to test/decide if we need to give all the movies when modifying the name.
         """
         Modify
         ---
@@ -790,20 +900,17 @@ class StreamingCollection(Resource):
         try:
             db.session.add(streamingservice)
             db.session.commit()
-        #TODO: doesn't work since our database model allows duplicate actors, movies, and all others
+        #TODO: doesn't work since our database model allows duplicate actors, , and  others
         except IntegrityError as i_e:
-            raise Conflict(
-                409,
-                "Identical streamingservice already exists.".format(
-                **request.json
-                )
-            ) from i_e
+            raise Conflict(description="Identical streaming service already exists.") from i_e
         return Response(status=204)
 
 app.url_map.converters["movie"] = MovieConverter
 app.url_map.converters["actorname"] = ActorConverter
+app.url_map.converters["streamingservice"] = StreamingConverter
 api.add_resource(MovieItem,"/movie/<movie:movie>/")
 api.add_resource(MovieCollection,"/movie/")
 api.add_resource(ActorCollection,"/actor/")
 api.add_resource(ActorItem,"/actor/<actorname:actorname>/")
-api.add_resource(StreamingCollection,"/streaming/<movie:movie>/")
+api.add_resource(StreamingCollection,"/streaming/")
+api.add_resource(StreamingItem,"/streaming/<streamingservice:streamingservice>/")
