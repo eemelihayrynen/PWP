@@ -178,6 +178,9 @@ class Movie(db.Model):
 
 class Actor(db.Model):
     """Database definition and utility functions for actors"""
+    __table_args__ = (
+        db.UniqueConstraint("first_name", "last_name"),
+    )
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(128), nullable=False)
     last_name = db.Column(db.String(128), nullable=False)
@@ -217,6 +220,10 @@ class Actor(db.Model):
 
 class Director(db.Model):
     """Database definition and utility functions for director"""
+    __table_args__ = (
+        db.UniqueConstraint("first_name", "last_name"),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(128), nullable=False)
     last_name = db.Column(db.String(128), nullable=False)
@@ -261,7 +268,7 @@ class Director(db.Model):
 class StreamingService(db.Model):
     """Database definition and utility functions for streaming services"""
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(256), nullable=False)
+    name = db.Column(db.String(256), nullable=False, unique=True)
 
     movies = db.relationship(
         "Movie",
@@ -564,7 +571,7 @@ class MovieCollection(Resource):
         to_be_checked_actors = list(request.json["actors"])
         to_be_checked_directors = list(request.json["directors"])
         to_be_checked_streaming_services = list(request.json["streaming_services"])
-        #TODO: check that the movie doesn't exist yet.
+
         movie = Movie(
             title=title,
             comments=comments,
