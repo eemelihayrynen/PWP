@@ -39,7 +39,8 @@ components:
           description: Year of the original release
           type: integer
         streaming_services:
-          $ref: '#/components/schemas/StreamingService'
+          type: array
+          $ref: '#/components/schemas/StreamingServiceShort'
           description: List of streaming services
         title:
           description: Name of the movie
@@ -79,8 +80,27 @@ components:
         name:
           description: Name of the service
           type: string
+        movies:
+          $ref: '#/components/schemas/MovieShort'
+          description: List of movies in streaming service
       required:
       - name
+    StreamingServiceShort:
+      type: object
+      properties:
+        name:
+          description: Name of the service
+          type: string
+      required:
+      - name
+    MovieShort:
+      type: object
+      properties:
+        title:
+          description: Movie title
+          type: string
+      required:
+      - title
   parameters:
     movie:
       description: Movie title
@@ -93,6 +113,13 @@ components:
       description: Name of the actor in one line
       in: path
       name: actorname
+      required: true
+      schema:
+        type: string
+    streamingservice:
+      description: Name of the streaming service
+      in: path
+      name: streamingservice
       required: true
       schema:
         type: string

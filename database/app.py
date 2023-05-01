@@ -88,7 +88,6 @@ class Movie(db.Model):
             return {"title": self.title}
 
         actors = []
-        #TODO: convert these loops to shorter code e.g. with list comprehension
         for actor in self.actors:
             actors.append(actor.serialize())
         directors = []
@@ -127,8 +126,20 @@ class Movie(db.Model):
         self.genres = doc["genres"]
 
     @staticmethod
-    def json_schema():
+    def json_schema(short_form=False):
         '''JSON schema function for Movie schema validation'''
+        if short_form:
+            schema = {
+            "type": "object",
+            "required": ["title"]
+            }
+            props = schema["properties"] = {}
+            props["title"] = {
+                "description": "Name of the movie",
+                "type": "string"
+            }
+            return schema
+        
         schema = {
             "type": "object",
             "required": ["title"]
@@ -365,7 +376,7 @@ class MovieItem(Resource):
         ---
         description: Delete movie by name
         parameters:
-          - $ref: '#/components/schemas/Movie'
+          - $ref: '#/components/parameters/movie'
         responses:
             '204':
                 description: Deleted movie successfully
@@ -382,7 +393,7 @@ class MovieItem(Resource):
         ---
         description: Edit movie in the database
         parameters:
-          - $ref: '#/components/schemas/movie'
+          - $ref: '#/components/parameters/movie'
         requestBody:
             description: JSON formatted data
             content:
@@ -414,16 +425,24 @@ class MovieItem(Resource):
                         description: URI of the movie modified
                         schema:
                             type: string
-            '409':
-                description: Identical Movie exists
+            '400':
+                description: Bad request/Invalid JSON Schema.
             '404':
-                description: Movie was not found
+                description: Movie was not found.
+            '409':
+                description: Identical Movie exists.
+            '415':
+                description: Unsupported media type, JSON required.
         """
         #TODO TEST THIS METHOD
-
-        if not request.json:
-            raise UnsupportedMediaType
-
+        try:
+            #DOC:If the request content type is not ``application/json``, this
+            # will raise a 400 Bad Request error.
+            request.json
+        except BadRequest as b_r:
+            raise UnsupportedMediaType(
+                description="UnsupportedMediaType, JSON document required."
+                ) from b_r
         try:
             validate(request.json,Movie.json_schema())
         except ValidationError as v_e:
@@ -539,17 +558,21 @@ class MovieCollection(Resource):
                         schema:
                             type: string
             '400':
-                description: Bad request/Invalid JSON Schema
+                description: Bad request/Invalid JSON Schema.
             '409':
-                description: Identical Movie exists
+                description: Identical Movie exists.
+            '415':
+                description: Unsupported media type, JSON required.
                         
-        """#TODO: add error responses once they are added to the method itself
+        """
         try:
             #DOC:If the request content type is not ``application/json``, this
             # will raise a 400 Bad Request error.
             request.json
         except BadRequest as b_r:
-            raise UnsupportedMediaType(description="UnsupportedMediaType, JSON document required.") from b_r
+            raise UnsupportedMediaType(
+                description="UnsupportedMediaType, JSON document required."
+                ) from b_r
         validator = Draft7Validator(
                 Movie.json_schema(),
                 format_checker=Draft7Validator.FORMAT_CHECKER
@@ -557,7 +580,6 @@ class MovieCollection(Resource):
         try:
             print("Trying to validate request json")
             validator.validate(request.json)
-
         except ValidationError as v_e:
             raise BadRequest(description=str(v_e)) from v_e
 
@@ -660,6 +682,7 @@ class ActorConverter(BaseConverter):
     def to_url(self, value):
         print(value)
         return value.first_name + " " + value.last_name
+
 class ActorCollection(Resource):
     """Resource for getting all actors and adding new."""
     def post(self):
@@ -684,10 +707,29 @@ class ActorCollection(Resource):
                         description: URI of the actor added
                         schema:
                             type: string
+            '400':
+                description: Bad request/Invalid JSON Schema.
             '409':
                 description: Identical actor exists
+            '415':
+                description: Unsupported media type, JSON required.
         """
-
+        try:
+            #DOC:If the request content type is not ``application/json``, this
+            # will raise a 400 Bad Request error.
+            request.json
+        except BadRequest as b_r:
+            raise UnsupportedMediaType(
+                description="UnsupportedMediaType, JSON document required."
+                ) from b_r
+        validator = Draft7Validator(
+                Actor.json_schema(),
+                format_checker=Draft7Validator.FORMAT_CHECKER
+                )
+        try:
+            validator.validate(request.json)
+        except ValidationError as v_e:
+            raise BadRequest(description=str(v_e)) from v_e
         first = str(request.json["first_name"])
         last = str(request.json["last_name"])
         actor = Actor(
@@ -696,7 +738,6 @@ class ActorCollection(Resource):
         try:
             db.session.add(actor)
             db.session.commit()
-        #TODO: doesn't work since our database model allows duplicate actors, , and  others
         except IntegrityError as i_e:
             raise Conflict(description="Identical actor already exists.") from i_e
         return Response(status=201, headers={"Location": api.url_for(ActorItem, actorname=actor)})
@@ -769,32 +810,44 @@ class ActorItem(Resource):
                         description: URI of the actor modified
                         schema:
                             type: string
-            '409':
-                description: Identical actor exists
+            '400':
+                description: Bad request/Invalid JSON Schema.
             '404':
                 description: Actor was not found
+            '409':
+                description: Identical actor exists
+            '415':
+                description: Unsupported media type, JSON required.
         """
-
-        if not request.json:
-            raise UnsupportedMediaType
+        #TODO:update above documentation
         try:
-            validate(request.json, Actor.json_schema())
+            #DOC:If the request content type is not ``application/json``, this
+            # will raise a 400 Bad Request error.
+            request.json
+        except BadRequest as b_r:
+            raise UnsupportedMediaType(
+                description="UnsupportedMediaType, JSON document required."
+                ) from b_r
+        validator = Draft7Validator(
+                Actor.json_schema(),
+                format_checker=Draft7Validator.FORMAT_CHECKER
+                )
+        try:
+            validator.validate(request.json)
         except ValidationError as v_e:
             raise BadRequest(description=str(v_e)) from v_e
-
         actorname.deserialize(request.json)
-
         try:
             db.session.add(actorname)
             db.session.commit()
-        #TODO: doesn't work since our database model allows duplicate actors, , and  others
+        #TODO: test that this works
         except IntegrityError as i_e:
             raise Conflict(description="Identical actor already exists.") from i_e
         return Response(
             status=204,
             headers={"Location": api.url_for(ActorItem, actorname=actorname)}
             )
-    
+
 class StreamingConverter(BaseConverter):
     '''Helper class to get Streaming service from url and url from streaming service'''
     def to_python(self, value):
@@ -811,7 +864,8 @@ class StreamingCollection(Resource):
     """Resource for creating new streaming service."""
     def post(self):
         """
-        Add new streaming service to the database. Does not permit adding movies to the service right now.
+        Add new streaming service to the database.
+        Does not permit adding movies to the service right now.
         ---
         description: Post new streaming service to the database
         requestBody:
@@ -830,8 +884,12 @@ class StreamingCollection(Resource):
                         description: URI of the streaming service added
                         schema:
                             type: string
+            '400':
+                description: Bad request/Invalid JSON Schema.
             '409':
                 description: Identical streaming service exists
+            '415':
+                description: Unsupported media type, JSON required.
         """
         if not request.json:
             raise UnsupportedMediaType(415, "UnsupportedMediaType, JSON document required.")
@@ -853,12 +911,13 @@ class StreamingCollection(Resource):
         try:
             db.session.add(streaming_service)
             db.session.commit()
-        #TODO: doesn't work since our database model allows duplicate actors, , and  others
         except IntegrityError as i_e:
             raise Conflict(description="Identical streaming service already exists.") from i_e
-        return Response(status=201, headers={"Location": api.url_for(StreamingItem, streamingservice=streaming_service)})
-    
-    
+        return Response(
+            status=201,
+            headers={"Location": api.url_for(StreamingItem, streamingservice=streaming_service)}
+            )
+
 class StreamingItem(Resource):
     """Resource for getting and modifying existing streaming service."""
     def get(self, streamingservice):
@@ -874,7 +933,7 @@ class StreamingItem(Resource):
                 content:
                     application/JSON:
                         schema:
-                            $ref: '#/components/schemas/StreamingService'
+                            $ref: '#/components/schemas/StreamingServiceShort'
                         example:
                             name: Netflix
                             movies:
@@ -887,27 +946,56 @@ class StreamingItem(Resource):
             '404':
                 description: Streaming service not found
         """
-        print(streamingservice.name)
         return streamingservice.serialize()
 
     def put(self,streamingservice):
         #TODO: need to test/decide if we need to give all the movies when modifying the name.
         """
-        Modify
+        Modify existing streaming service
         ---
-
+        description: Modify streaming service in the database
+        parameters:
+        - $ref: '#/components/parameters/streamingservice'
+        requestBody:
+            description: JSON formatted data
+            content:
+                application/JSON:
+                    schema:
+                        $ref: '#/components/schemas/StreamingService'
+                    example:
+                        name: Netflix
+        responses:
+            '204':
+                description: StreamingService modified successfully
+                headers:
+                    Location:
+                        description: URI of the streaming service added
+                        schema:
+                            type: string
+            '400':
+                description: Bad request/Invalid JSON Schema.
+            '409':
+                description: Identical streaming service exists
+            '415':
+                description: Unsupported media type, JSON required.
         """
+        #TODO: documentation
         if not request.json:
-            raise UnsupportedMediaType
+            raise UnsupportedMediaType(415, "UnsupportedMediaType, JSON document required.")
+        validator = Draft7Validator(
+                StreamingService.json_schema(),
+                format_checker=Draft7Validator.FORMAT_CHECKER
+                )
         try:
-            validate(request.json, StreamingService.json_schema())
+            #print("Trying to validate request json")
+            validator.validate(request.json)
+
         except ValidationError as v_e:
             raise BadRequest(description=str(v_e)) from v_e
         streamingservice.deserialize(request.json)
         try:
             db.session.add(streamingservice)
             db.session.commit()
-        #TODO: doesn't work since our database model allows duplicate actors, , and  others
         except IntegrityError as i_e:
             raise Conflict(description="Identical streaming service already exists.") from i_e
         return Response(status=204)
