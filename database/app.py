@@ -17,7 +17,13 @@ from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMedia
 from werkzeug.routing import BaseConverter
 from flasgger import Swagger, swag_from
 
+#TODO: divide code to separate files
 
+#TODO: there must be corresponding data in the database to
+# make the examples in documentation work.
+
+#TODO: delete operations should be defined also on database model level,
+#  e.g. cascade, set null...
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///moviesearch.db"
@@ -139,7 +145,7 @@ class Movie(db.Model):
                 "type": "string"
             }
             return schema
-        
+
         schema = {
             "type": "object",
             "required": ["title"]
@@ -335,6 +341,8 @@ class MovieItem(Resource):
         Get a movie with title
         ---
         description: Get a movie by title
+        tags:
+            - movie
         parameters:
         - $ref: '#/components/parameters/movie'
         responses:
@@ -375,6 +383,8 @@ class MovieItem(Resource):
         Method for deleting a movie
         ---
         description: Delete movie by name
+        tags:
+            - movie
         parameters:
           - $ref: '#/components/parameters/movie'
         responses:
@@ -392,6 +402,8 @@ class MovieItem(Resource):
         Modify existing movie
         ---
         description: Edit movie in the database
+        tags:
+            - movie
         parameters:
           - $ref: '#/components/parameters/movie'
         requestBody:
@@ -526,6 +538,8 @@ class MovieCollection(Resource):
         Method to post a new movie to the db
         ---
         description: Post a new movie
+        tags:
+            - movie
         requestBody:
             description: JSON formatted data
             content:
@@ -690,6 +704,8 @@ class ActorCollection(Resource):
         Add new actor to the database.
         ---
         description: Post new actor to the database
+        tags:
+            - actor
         requestBody:
             description: JSON formatted data
             content:
@@ -749,6 +765,8 @@ class ActorItem(Resource):
         Method for deleting actor
         ---
         description: Delete actor by name
+        tags:
+            - actor
         parameters:
           - $ref: '#/components/parameters/actorname'
         responses:
@@ -766,10 +784,12 @@ class ActorItem(Resource):
         Get actor by name
         ---
         description: Get actor by name
+        tags:
+            - actor
         parameters:
           - $ref: '#/components/parameters/actorname'
         responses:
-            '204':
+            '200':
                 description: Got actor successfully
                 content:
                     application/JSON:
@@ -791,6 +811,8 @@ class ActorItem(Resource):
         Edit existing actor
         ---
         description: Edit actor in the database
+        tags:
+            - actor
         parameters:
           - $ref: '#/components/parameters/actorname'
         requestBody:
@@ -819,7 +841,6 @@ class ActorItem(Resource):
             '415':
                 description: Unsupported media type, JSON required.
         """
-        #TODO:update above documentation
         try:
             #DOC:If the request content type is not ``application/json``, this
             # will raise a 400 Bad Request error.
@@ -868,6 +889,8 @@ class StreamingCollection(Resource):
         Does not permit adding movies to the service right now.
         ---
         description: Post new streaming service to the database
+        tags:
+            - streaming
         requestBody:
             description: JSON formatted data
             content:
@@ -925,6 +948,8 @@ class StreamingItem(Resource):
         Get a streaming service name and list of all titles in it.
         ---
         description: Get a streaming service name and list of all titles in it.
+        tags:
+            - streaming
         parameters:
         - $ref: '#/components/parameters/streamingservice'
         responses:
@@ -954,6 +979,8 @@ class StreamingItem(Resource):
         Modify existing streaming service
         ---
         description: Modify streaming service in the database
+        tags:
+            - streaming
         parameters:
         - $ref: '#/components/parameters/streamingservice'
         requestBody:
@@ -979,7 +1006,6 @@ class StreamingItem(Resource):
             '415':
                 description: Unsupported media type, JSON required.
         """
-        #TODO: documentation
         if not request.json:
             raise UnsupportedMediaType(415, "UnsupportedMediaType, JSON document required.")
         validator = Draft7Validator(

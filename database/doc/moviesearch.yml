@@ -21,14 +21,18 @@ components:
       type: object
       properties:
         actors:
-          $ref: '#/components/schemas/Actor'
-          description: List of actors
+          type: array
+          items:
+            $ref: '#/components/schemas/Actor'
+            description: List of actors
         comments:
           description: Comments in one string
           type: string
         directors:
-          $ref: '#/components/schemas/Director'
-          description: List of directors
+          type: array
+          items:
+            $ref: '#/components/schemas/Director'
+            description: List of directors
         genres:
           description: Genres in one string
           type: string
@@ -40,8 +44,9 @@ components:
           type: integer
         streaming_services:
           type: array
-          $ref: '#/components/schemas/StreamingServiceShort'
-          description: List of streaming services
+          items:
+            $ref: '#/components/schemas/StreamingServiceShort'
+            description: List of streaming services
         title:
           description: Name of the movie
           type: string
@@ -81,8 +86,10 @@ components:
           description: Name of the service
           type: string
         movies:
-          $ref: '#/components/schemas/MovieShort'
-          description: List of movies in streaming service
+          type: array
+          items:
+            $ref: '#/components/schemas/MovieShort'
+            description: List of movies in streaming service
       required:
       - name
     StreamingServiceShort:
@@ -123,3 +130,10 @@ components:
       required: true
       schema:
         type: string
+  tags:
+  - name: movie
+    description: Movie handling
+  - name: actor
+    description: Actor handling
+  - name: streaming
+    description: Streaming service handling
