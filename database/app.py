@@ -533,6 +533,14 @@ class MovieItem(Resource):
 
 class MovieCollection(Resource):
     """Resource for getting all movies or adding a new."""
+    #TODO: finish this missing get-method to get all movies
+    def get(self):
+        movies = Movie.query.all()
+        response = []
+        for movie in movies:
+            response.append(movie.serialize(short_form=True))
+        return response
+
     def post(self):
         """
         Method to post a new movie to the db
@@ -882,7 +890,15 @@ class StreamingConverter(BaseConverter):
         return value.name
 
 class StreamingCollection(Resource):
-    """Resource for creating new streaming service."""
+    """Resource for creating new streaming service or getting all"""
+    #TODO: finish this missing get-method to get all streaming services
+    def get(self):
+        services = StreamingService.query.all()
+        response = []
+        for service in services:
+            response.append(service.serialize(short_form=True))
+        return response
+
     def post(self):
         """
         Add new streaming service to the database.
@@ -1025,6 +1041,12 @@ class StreamingItem(Resource):
         except IntegrityError as i_e:
             raise Conflict(description="Identical streaming service already exists.") from i_e
         return Response(status=204)
+
+@app.route("/api/")
+def index():
+    '''Entypoint path for the API'''
+    #TODO: add entrypoint for hypermedia
+    return "API entrypoint will be added here."
 
 app.url_map.converters["movie"] = MovieConverter
 app.url_map.converters["actorname"] = ActorConverter
