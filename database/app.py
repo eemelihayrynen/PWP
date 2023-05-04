@@ -73,7 +73,7 @@ class Movie(db.Model):
     comments = db.Column(db.String(256), nullable=True)
     rating = db.Column(db.Float, nullable=True)
     writer = db.Column(db.String(256), nullable=True)
-    release_year = db.Column(db.Integer, nullable=True)
+    release_year = db.Column(db.Integer, nullable=False)
     genres = db.Column(db.String(256), nullable=True)
 
     actors = db.relationship("Actor", secondary=MovieActorsAssociation, back_populates='movies')
@@ -376,7 +376,10 @@ class MovieItem(Resource):
 
         #db_movie_dict = db_movie.__dict__
         #del db_movie_dict['_sa_instance_state']
-        return movie.serialize()
+        body = movie.serialize()
+        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+        #return movie.serialize()
+        return response
 
     def delete(self,movie):
         """
@@ -536,9 +539,10 @@ class MovieCollection(Resource):
     #TODO: finish this missing get-method to get all movies
     def get(self):
         movies = Movie.query.all()
-        response = []
+        body = []
         for movie in movies:
-            response.append(movie.serialize(short_form=True))
+            body.append(movie.serialize(short_form=True))
+        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
         return response
 
     def post(self):
@@ -894,9 +898,12 @@ class StreamingCollection(Resource):
     #TODO: finish this missing get-method to get all streaming services
     def get(self):
         services = StreamingService.query.all()
-        response = []
+        body = []
         for service in services:
-            response.append(service.serialize(short_form=True))
+            body.append(service.serialize(short_form=True))
+
+        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+
         return response
 
     def post(self):
@@ -987,7 +994,9 @@ class StreamingItem(Resource):
             '404':
                 description: Streaming service not found
         """
-        return streamingservice.serialize()
+        body = streamingservice.serialize()
+        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+        return response
 
     def put(self,streamingservice):
         #TODO: need to test/decide if we need to give all the movies when modifying the name.
