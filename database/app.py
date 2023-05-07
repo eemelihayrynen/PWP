@@ -334,6 +334,55 @@ class MovieConverter(BaseConverter):
 
     def to_url(self, value):
         return value.title
+    
+def check_streaming(self, movie):
+    """
+    This function when called will check if the existing movie has the correct streaming data 
+    """
+    results = just_watch.search_for_item(query=movie.title)
+    j,ss1 = 0,""
+    try:
+        for j in range(len(results["items"][0]["offers"][j])*2):
+            try:
+                if results["items"][0]["offers"][j]["monetization_type"] == "flatrate" or results["items"][0]["offers"][j]["monetization_type"] == "free":
+                    streamer = results["items"][0]["offers"][j]["package_short_name"]
+					
+                    if streamer == "hbm" or streamer == "hbo":
+                        ss1 = "HBO Max"
+                        break
+                    elif streamer == "dnp":
+                        ss1 = "Disney Plus"
+                        break
+                    elif streamer == "nfx":
+                        ss1 = "Netflix"
+                        break
+                    elif streamer == "yle":
+                        ss1 = "Yle Areena"
+                        break
+                    elif streamer == "rtu":
+                        ss1 = "Ruutu"
+                        break
+                    elif streamer == "prv":
+                        ss1 = "Amazon Prime Video"
+                        break
+                    elif streamer == "vip":
+                        ss1 = "Viaplay"
+                        break
+
+                    
+            except IndexError:
+                print("no work")
+                break
+        if StreamingService.query.filter_by(name = ss1).first() == None:
+            movie.streaming_services.append(StreamingService(name=ss1))
+            ss1= StreamingService.query.filter_by(name = ss1).first()
+        else:
+            ss1 = StreamingService.query.filter_by(name = ss1).first()
+        movie.streaming_services.append(ss1)
+        return ss1
+    except:
+        print("no work here either")
+        
 class MovieItem(Resource):
     """Resource for getting (searching) existing movie or modifying it."""
     def get(self, movie):
@@ -377,6 +426,7 @@ class MovieItem(Resource):
         #db_movie_dict = db_movie.__dict__
         #del db_movie_dict['_sa_instance_state']
         #/movie/<movie:movie>/
+        check_streaming(self, movie)
         body = movie.serialize()
         links = [{'rel': 'self', 'href': '/movie/<movie:movie>/', "methods": ["DELETE", "PUT"]}]
         body['links'] = links
