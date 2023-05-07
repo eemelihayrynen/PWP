@@ -195,12 +195,12 @@ class Movie(db.Model):
 
 class Actor(db.Model):
     """Database definition and utility functions for actors"""
-    __table_args__ = (
-        db.UniqueConstraint("first_name", "last_name"),
-    )
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(128), nullable=False)
     last_name = db.Column(db.String(128), nullable=False)
+    __table_args__ = (
+        db.UniqueConstraint("first_name", "last_name"),
+    )
 
     movies = db.relationship("Movie", secondary=MovieActorsAssociation, back_populates='actors')
 
@@ -376,7 +376,10 @@ class MovieItem(Resource):
 
         #db_movie_dict = db_movie.__dict__
         #del db_movie_dict['_sa_instance_state']
+        #/movie/<movie:movie>/
         body = movie.serialize()
+        links = [{'rel': 'self', 'href': '/movie/<movie:movie>/', "methods": ["DELETE", "PUT"]}]
+        body['links'] = links
         response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
         #return movie.serialize()
         return response
@@ -399,6 +402,8 @@ class MovieItem(Resource):
         #movie = db.session.query(Movie).filter(Movie.title == moviename).first()
         db.session.delete(movie)
         db.session.commit()
+        Hypermedia = [{'rel': 'self', 'href': '/movie/<movie:movie>/', "methods": ["GET", "PUT"]}]
+        return jsonify({'links': Hypermedia})
 
     def put(self, movie):
         """
@@ -531,8 +536,8 @@ class MovieItem(Resource):
 
         except IntegrityError as i_e:
             raise Conflict(description="Identical movie already exists.") from i_e
-
-        return Response(status=204)
+        Hypermedia = [{'rel': 'self', 'href': '/movie/<movie:movie>/', "methods": ["GET", "PUT"]}]
+        return jsonify({'links': Hypermedia})
 
 class MovieCollection(Resource):
     """Resource for getting all movies or adding a new."""
@@ -542,7 +547,10 @@ class MovieCollection(Resource):
         body = []
         for movie in movies:
             body.append(movie.serialize(short_form=True))
+        links = [{'rel': 'self', 'href': '/movie/', "methods": ["Post"]}]
+        body['links'] = links
         response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+
         return response
 
     def post(self):
@@ -608,6 +616,7 @@ class MovieCollection(Resource):
             validator.validate(request.json)
         except ValidationError as v_e:
             raise BadRequest(description=str(v_e)) from v_e
+        
 
         #TODO: create deserialize method to Movie class to simplify this
         title = str(request.json["title"])
@@ -692,7 +701,8 @@ class MovieCollection(Resource):
             db.session.commit()
         except IntegrityError as i_e:
             raise Conflict(description="Identical movie already exists.") from i_e
-        return Response(status=201, headers={"Location": api.url_for(MovieItem, movie=movie)})
+        links = [{'rel': 'self', 'href': '/movie/', "methods": ["GET"]}]
+        return jsonify({'links': links}), 201
 
 class ActorConverter(BaseConverter):
     '''Helper class to get Actor from url and url from actor'''
@@ -789,7 +799,10 @@ class ActorItem(Resource):
         """
         db.session.delete(actorname)
         db.session.commit()
-        return Response(status=204)
+        links = [{'rel': 'self', 'href': '/actor/<actorname:actorname>/', "methods": ["GET", "PUT"]},
+                 {'rel': 'self', 'href': '/actor/', "methods": ["POST"]}]
+        return jsonify({'links': links}), 204
+        
 
     def get(self,actorname):
         """
@@ -814,7 +827,12 @@ class ActorItem(Resource):
                 description: Actor was not found
         """
         print(actorname)
-        return actorname.serialize()
+        body = actorname.serialize()
+        links = [{'rel': 'self', 'href': '/actor/<actorname:actorname>/', "methods": ["DELETE", "PUT"]},
+                 {'rel': 'self', 'href': '/actor/', "methods": ["POST"]}]
+        body['links'] = links
+        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+        return response
 
     def put(self, actorname):
         #TODO TEST THIS METHOD
@@ -876,7 +894,9 @@ class ActorItem(Resource):
         #TODO: test that this works
         except IntegrityError as i_e:
             raise Conflict(description="Identical actor already exists.") from i_e
-        return Response(
+        links = [{'rel': 'self', 'href': '/actor/<actorname:actorname>/', "methods": ["DELETE", "PUT"]},
+                 {'rel': 'self', 'href': '/actor/', "methods": ["POST"]}]
+        return Response(jsonify({'links': links}),
             status=204,
             headers={"Location": api.url_for(ActorItem, actorname=actorname)}
             )
@@ -901,7 +921,9 @@ class StreamingCollection(Resource):
         body = []
         for service in services:
             body.append(service.serialize(short_form=True))
-
+        links = [{'rel': 'self', 'href': '/streaming/', "methods": ["POST"]},
+                 {'rel': 'self', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['GET', 'PUT']}]
+        body["links"] = links
         response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
 
         return response
@@ -959,7 +981,11 @@ class StreamingCollection(Resource):
             db.session.commit()
         except IntegrityError as i_e:
             raise Conflict(description="Identical streaming service already exists.") from i_e
-        return Response(
+        links = [{'rel': 'self', 'href': '/streaming/', "methods": ["GET"]},
+                 {'rel': 'self', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['GET', 'PUT']}]
+        body = []
+        body["links"] = links
+        return Response(json.dumps(body),
             status=201,
             headers={"Location": api.url_for(StreamingItem, streamingservice=streaming_service)}
             )
@@ -995,6 +1021,9 @@ class StreamingItem(Resource):
                 description: Streaming service not found
         """
         body = streamingservice.serialize()
+        links = [{'rel': 'self', 'href': '/streaming/', "methods": ["GET", "POST"]},
+                 {'rel': 'self', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['PUT']}]
+        body["links"] = links
         response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
         return response
 
@@ -1049,13 +1078,23 @@ class StreamingItem(Resource):
             db.session.commit()
         except IntegrityError as i_e:
             raise Conflict(description="Identical streaming service already exists.") from i_e
+        body = []
+        links = [{'rel': 'self', 'href': '/streaming/', "methods": ["GET", "POST"]},
+                 {'rel': 'self', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['GET']}]
+        body["links"] = links
+        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
         return Response(status=204)
 
 @app.route("/api/")
 def index():
     '''Entypoint path for the API'''
-    #TODO: add entrypoint for hypermedia
-    return "API entrypoint will be added here."
+    links = [{'rel': 'MovieItem', 'href': "/movie/<movie:movie>/", 'methods': ['GET', 'PUT', 'DELETE']},
+             {'rel': 'MovieCollection', 'href': "/movie/", 'methods': ['GET', 'POST']},
+             {'rel': 'ActorCollection', 'href': "/actor/", 'methods': ['POST']},
+             {'rel': 'ActorItem', 'href': "/actor/<actorname:actorname>/", 'methods': ['GET', 'PUT', 'DELETE']},
+             {'rel': 'StreamingCollection', 'href': "/streaming/", 'methods': ['GET', 'POST']},
+             {'rel': 'StreamingItem', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['GET', 'PUT']}]
+    return jsonify({'links': links})
 
 app.url_map.converters["movie"] = MovieConverter
 app.url_map.converters["actorname"] = ActorConverter
