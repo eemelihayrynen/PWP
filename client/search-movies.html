@@ -55,6 +55,7 @@
     <p>${actor.first_name} ${actor.last_name}</p>
     `
   }
+  
 
   button.addEventListener('click', () => {
   urli = 'http://127.0.0.1:5000/movie/' + document.getElementById('floatingInput').value + "/";
@@ -75,7 +76,7 @@
       ${data.directors.map(displayDirectors).join('')}
       <p>Actors:</p>
       ${data.actors.map(displayActors).join('')}
-    <div>
+    </div>
     `;
 	})
 	.catch(error => {

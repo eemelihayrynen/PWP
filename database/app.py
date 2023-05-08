@@ -113,13 +113,13 @@ class Movie(db.Model):
         )    
         data["actors"] = []
         for actor in self.actors:
-            data["actors"].append(actor.first_name + " " + actor.last_name)
+            data["actors"].append(actor.serialize())
         data["directors"] = []
         for director in self.directors:
-            data["directors"].append(director.first_name + " " + director.last_name)
+            data["directors"].append(director.serialize())
         data["streaming_services"] = []
         for streaming_service in self.streaming_services:
-            data["streaming_services"].append(streaming_service.name)
+            data["streaming_services"].append(streaming_service.serialize(short_form=True))
         
         data.add_namespace("mumeta", LINK_RELATIONS_URL)
         data.add_control("self", href=request.path)
@@ -1163,8 +1163,8 @@ class StreamingCollection(Resource):
         data["items"] = []
         for service in services:
             data["items"].append(service.serialize(short_form=True))
-        response = Response(json.dumps(data), 200, mimetype=MASON)
-
+        #response = Response(json.dumps(data), 200, mimetype=MASON)
+        response = Response(json.dumps(data), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype=MASON)
         return response
 
     def post(self):

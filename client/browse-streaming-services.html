@@ -39,6 +39,16 @@
 <script type="text/javascript">
   const button = document.getElementById('searchButton');
   const container = document.getElementById('dataContainer');
+
+  function displayMovie(movie){
+    console.log(movie);
+    return `
+    <li>
+      <h3>${movie.title}</h3>
+    </li>
+    `;
+  }
+
   button.addEventListener('click', () => {
     selector = document.getElementById("ss-selection");
     service_name = selector.value;
@@ -48,7 +58,13 @@
     fetch(urli)
     .then(response => response.json())
     .then(data => {
-      container.innerHTML = JSON.stringify(data);
+      //console.log(data);
+      container.innerHTML = `
+      <h2>Movies streaming in ${service_name}:</h2>
+      <ul>
+      ${data.movies.map(displayMovie).join('')}
+      </ul>
+      `
     })
     .catch(error => {
       console.error(error);
@@ -62,11 +78,12 @@
   fetch(urli)
 	.then(response => response.json())
 	.then(data => {
-    data.forEach(element => {
+    console.log(data);
+    data.items.forEach(element => {
       const markup = `<option value="${element.name}">${element.name}</option>`;
       dropdown.insertAdjacentHTML('beforeend', markup);
     });
-	  container.innerHTML = JSON.stringify(data);
+	  //container.innerHTML = JSON.stringify(data);
 	})
 	.catch(error => {
 	  console.error(error);

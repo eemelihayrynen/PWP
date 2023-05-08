@@ -33,13 +33,27 @@
   const button = document.getElementById('searchButton');
   const container = document.getElementById('dataContainer');
 
+  function displayMovie(movie){
+    //console.log(movie);
+    return `
+    <li>
+      <h3>${movie.title}</h3>
+    </li>
+    `;
+  }
+
   button.addEventListener('click', () => {
   urli = 'http://127.0.0.1:5000/movie/';
   fetch(urli)
 	.then(response => response.json())
 	.then(data => {
-	  container.innerHTML = JSON.stringify(data);
-    
+	  //container.innerHTML = JSON.stringify(data);
+    container.innerHTML = `
+    <h2>Movies found from database:</h2>
+    <ul>
+    ${data.items.map(displayMovie).join('')}
+    </ul>
+    `
 	})
 	.catch(error => {
 	  console.error(error);
