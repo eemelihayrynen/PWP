@@ -227,7 +227,7 @@ class Actor(db.Model):
         )
         data.add_control("profile", href=ACTOR_ITEM_URL)
         data.add_namespace("mumeta", LINK_RELATIONS_URL)
-        data.add_control("self", href=request.path)
+        data.add_control("self", href=api.url_for(ActorItem, actorname=self))
         data.add_control("collection", href=url_for("actor"))
         data.add_control_edit_actor(self)
         data.add_control_delete_actor(self)
@@ -329,7 +329,7 @@ class StreamingService(db.Model):
             data["movies"].append(movie.serialize(short_form=True))
         
         data.add_namespace("mumeta", LINK_RELATIONS_URL)
-        data.add_control("self", href=request.path)
+        data.add_control("self", href=api.url_for(StreamingItem, streamingservice=self))
         data.add_control_add_streamingservice()
         
         return data

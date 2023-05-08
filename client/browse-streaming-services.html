@@ -78,7 +78,7 @@
   fetch(urli)
 	.then(response => response.json())
 	.then(data => {
-    console.log(data);
+    //console.log(data);
     data.items.forEach(element => {
       const markup = `<option value="${element.name}">${element.name}</option>`;
       dropdown.insertAdjacentHTML('beforeend', markup);
