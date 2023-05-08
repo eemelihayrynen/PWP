@@ -101,8 +101,6 @@ class Movie(db.Model):
 
     def serialize(self, short_form=False):
         '''Serialize function for Movie resource'''
-        if short_form:
-            return {"title": self.title}
 
         data = MovieMetaBuilder(
             title = self.title,
@@ -111,6 +109,17 @@ class Movie(db.Model):
             release_year = self.release_year,
             genres = self.genres,
         )    
+        if short_form:
+            short_data = MovieMetaBuilder(
+                title = self.title
+            )
+            short_data.add_namespace("mumeta", LINK_RELATIONS_URL)
+            short_data.add_control("self", href=request.path)
+
+            short_data.add_control_edit_movie(self)
+            short_data.add_control_delete_movie(self)
+            return short_data
+            
         data["actors"] = []
         for actor in self.actors:
             data["actors"].append(actor.serialize())
@@ -321,16 +330,16 @@ class StreamingService(db.Model):
             name = self.name,
             id = self.id
         )
-        data["movies"] = []
-        data.add_control("profile", href=STREAMING_ITEM_URL)
-        if short_form:
-            return {"name": self.name}
-        for movie in self.movies:
-            data["movies"].append(movie.serialize(short_form=True))
-        
         data.add_namespace("mumeta", LINK_RELATIONS_URL)
         data.add_control("self", href=api.url_for(StreamingItem, streamingservice=self))
         data.add_control_add_streamingservice()
+        if short_form:
+            return data
+        data["movies"] = []
+        data.add_control("profile", href=STREAMING_ITEM_URL)
+        for movie in self.movies:
+            data["movies"].append(movie.serialize(short_form=True))
+        
         
         return data
 
