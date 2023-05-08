@@ -19,7 +19,7 @@
     </div>
   </div>
 </nav>
-<div class="container-md">
+<div class="container-md ">
   <h1 class="text-center">Movie search</h1>
   <div class="row">
     <div class="col">
@@ -33,7 +33,7 @@
     </div>
   </div>
 </div>
-<div class="container" id="dataContainer"> </div>
+<div class="container mt-2" id="dataContainer"> </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script> 
 <script>
   const button = document.getElementById('searchButton');
@@ -65,18 +65,26 @@
 	.then(data => {
 	  //container.innerHTML = JSON.stringify(data);
     container.innerHTML = `
-    <div>
-      <h1>${data.title}</h1>
-      <p>Rating: ${data.rating}</p>
-      <p>Year: ${data.release_year}</p>
-      <p>Writers: ${data.writer}</p>
-      <p>Genres: ${data.genres}</p>
-      <p>Available in following streaming services:</p>
-      ${data.streaming_services.map(displaySSs).join('')}
-      <p>Directors:</p>
-      ${data.directors.map(displayDirectors).join('')}
-      <p>Actors:</p>
-      ${data.actors.map(displayActors).join('')}
+    <div class="row mt-2">
+      <div class="col">
+        <img src="${data["@controls"]["mumeta:poster"]["href"]}" class="img-fluid float-end" alt="${data.title} movie poster">
+      </div>
+      <div class="col">
+        <h2>${data.title}</h2>
+        
+        <p><span class="badge text-bg-warning">Rating: </span> ${data.rating}</p>
+        <p><span class="badge text-bg-info">Released: </span> ${data.release_year}</p>
+
+        <p><span style="font-weight:bold;">Writers:</span> ${data.writer}</p>
+        <p><span style="font-weight:bold;">Genres:</span> ${data.genres}</p>
+        <h5>Streaming in:</h5>
+        ${data.streaming_services.map(displaySSs).join('')}
+        <h5>Directors:</h5>
+        ${data.directors.map(displayDirectors).join('')}
+        <h5>Actors:</h5>
+        ${data.actors.map(displayActors).join('')}
+      </div>
+    
     </div>
     `;
 	})

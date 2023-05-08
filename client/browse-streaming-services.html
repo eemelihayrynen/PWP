@@ -20,7 +20,7 @@
   </div>
 </nav>
 <div class="container-md">
-  <h1 class="text-center">Browse streaming services</h1>
+  <h2 class="text-center">Browse streaming services</h2>
   <div class="row">
     <div class="col">
       <select id="ss-selection" class="form-select form-select-lg mb-3" aria-label=".form-select-lg example">
@@ -43,9 +43,7 @@
   function displayMovie(movie){
     console.log(movie);
     return `
-    <li>
-      <h3>${movie.title}</h3>
-    </li>
+    <li class="list-group-item">${movie.title}</li>
     `;
   }
 
@@ -61,7 +59,7 @@
       //console.log(data);
       container.innerHTML = `
       <h2>Movies streaming in ${service_name}:</h2>
-      <ul>
+      <ul class="list-group">
       ${data.movies.map(displayMovie).join('')}
       </ul>
       `

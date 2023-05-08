@@ -17,8 +17,14 @@ from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMedia
 from werkzeug.routing import BaseConverter
 from flasgger import Swagger, swag_from
 from justwatch import JustWatch
+from tmdbv3api import TMDb
+import tmdbv3api
 
 just_watch = JustWatch(country='FI')
+tmdb = TMDb()
+tmdb.api_key = 'ADD_KEY'
+tmdb.language = 'en'
+tmdb_movies = tmdbv3api.Movie()
 
 #TODO: divide code to separate files
 
@@ -32,7 +38,7 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///moviesearch.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SWAGGER"] = {
-    "title": "Sensorhub API",
+    "title": "Movie Search API",
     "openapi": "3.0.3",
     "uiversion": 3,
 }
@@ -108,7 +114,7 @@ class Movie(db.Model):
             writer = self.writer,
             release_year = self.release_year,
             genres = self.genres,
-        )    
+        )
         if short_form:
             short_data = MovieMetaBuilder(
                 title = self.title
@@ -118,8 +124,9 @@ class Movie(db.Model):
 
             short_data.add_control_edit_movie(self)
             short_data.add_control_delete_movie(self)
+            #short_data.add_control_movie_poster_url(self)
             return short_data
-            
+
         data["actors"] = []
         for actor in self.actors:
             data["actors"].append(actor.serialize())
@@ -129,12 +136,13 @@ class Movie(db.Model):
         data["streaming_services"] = []
         for streaming_service in self.streaming_services:
             data["streaming_services"].append(streaming_service.serialize(short_form=True))
-        
+
         data.add_namespace("mumeta", LINK_RELATIONS_URL)
         data.add_control("self", href=request.path)
 
         data.add_control_edit_movie(self)
         data.add_control_delete_movie(self)
+        data.add_control_movie_poster_url(self)
 
         return data
 
@@ -339,8 +347,8 @@ class StreamingService(db.Model):
         data.add_control("profile", href=STREAMING_ITEM_URL)
         for movie in self.movies:
             data["movies"].append(movie.serialize(short_form=True))
-        
-        
+
+
         return data
 
     def deserialize(self, doc):
@@ -387,7 +395,7 @@ class MasonBuilder(dict):
         }
 
     def add_namespace(self, ns, uri):
- 
+
 
         if "@namespaces" not in self:
             self["@namespaces"] = {}
@@ -404,10 +412,10 @@ class MasonBuilder(dict):
 
         self["@controls"][ctrl_name] = kwargs
         self["@controls"][ctrl_name]["href"] = href
-        
+
     def add_control_post(self, ctrl_name, title, href, schema):
 
-    
+
         self.add_control(
             ctrl_name,
             href,
@@ -428,15 +436,24 @@ class MasonBuilder(dict):
             title=title,
             schema=schema
         )
-        
+
     def add_control_delete(self, title, href):
 
-        
+
         self.add_control(
             "mumeta:delete",
             href,
             method="DELETE",
             title=title,
+        )
+
+    def add_control_movie_poster(self, title, href):
+
+        self.add_control(
+            "mumeta:poster",
+            href,
+            method="GET",
+            title=title
         )
 
 class MovieMetaBuilder(MasonBuilder):
@@ -446,7 +463,7 @@ class MovieMetaBuilder(MasonBuilder):
             url_for("movie"),
             title="All movies"
         )
-        
+
     def add_control_actors_all(self):
         self.add_control(
             "mumeta:actors-all",
@@ -463,7 +480,6 @@ class MovieMetaBuilder(MasonBuilder):
         )
 
     def add_control_add_movie(self):
-        
         href = url_for("movie")
         title = "Add a new movie"
 
@@ -495,7 +511,7 @@ class MovieMetaBuilder(MasonBuilder):
             "Delete this movie",
             url_for("movie", movie=movie.title),
         )
-    
+
     def add_control_delete_actor(self, actor):
         self.add_control_delete(
             "Delete this actor",
@@ -508,13 +524,19 @@ class MovieMetaBuilder(MasonBuilder):
             url_for("movie", movie = movie.title),
             Movie.json_schema()
         )
-    
-    
+
     def add_control_edit_actor(self, actor):
         self.add_control_put(
             "Edit this artist",
             url_for("actor", actor = actor.first_name + " " + actor.last_name),
             Actor.json_schema()
+        )
+
+    def add_control_movie_poster_url(self, movie):
+
+        self.add_control_movie_poster(
+            "Get movie poster",
+            getMoviePosterPath(movie.title)
         )
 
 class MovieConverter(BaseConverter):
@@ -527,8 +549,22 @@ class MovieConverter(BaseConverter):
 
     def to_url(self, value):
         return value.title
-    
-def check_streaming(self, movie):
+
+def getMoviePosterPath(title):
+    '''Helper function to get movie poster from movie title using tmbd API search'''
+    #print(title)
+    if tmdb.api_key == "ADD_KEY":
+        return "no-image.png"
+    search = tmdb_movies.search(title)
+    if search is None:
+        return "no-image.png"
+    try:
+        path = "https://image.tmdb.org/t/p/w500" + search[0].poster_path
+    except IndexError:
+        path = "no-image.png"
+    return path
+
+def check_streaming(movie):
     """
     This function when called will check if the existing movie has the correct streaming data 
     """
@@ -539,7 +575,7 @@ def check_streaming(self, movie):
             try:
                 if results["items"][0]["offers"][j]["monetization_type"] == "flatrate" or results["items"][0]["offers"][j]["monetization_type"] == "free":
                     streamer = results["items"][0]["offers"][j]["package_short_name"]
-					
+
                     if streamer == "hbm" or streamer == "hbo":
                         ss1 = "HBO Max"
                         break
@@ -562,11 +598,10 @@ def check_streaming(self, movie):
                         ss1 = "Viaplay"
                         break
 
-                    
             except IndexError:
                 print("no work")
                 break
-        if StreamingService.query.filter_by(name = ss1).first() == None:
+        if StreamingService.query.filter_by(name = ss1).first() is None:
             movie.streaming_services.append(StreamingService(name=ss1))
             ss1= StreamingService.query.filter_by(name = ss1).first()
         else:
@@ -575,7 +610,7 @@ def check_streaming(self, movie):
         return ss1
     except:
         print("no work here either")
-        
+
 class MovieItem(Resource):
     """Resource for getting (searching) existing movie or modifying it."""
     def get(self, movie):
@@ -614,15 +649,13 @@ class MovieItem(Resource):
             '404':
                 description: Movie was not found from server
         """
-        #db_movie = Movie.query.filter_by(title = moviename).first()
-
-        #db_movie_dict = db_movie.__dict__
-        #del db_movie_dict['_sa_instance_state']
-        #/movie/<movie:movie>/
-        #check_streaming(self, movie) THIS DOES NOT WORK RN
         body = movie.serialize()
-        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype = MASON)
-        #return movie.serialize()
+        response = Response(
+            json.dumps(body),
+            200,
+            headers={'Access-Control-Allow-Origin': '*'},
+            mimetype = MASON
+            )
         return response
 
     def delete(self,movie):
@@ -640,7 +673,7 @@ class MovieItem(Resource):
             '404':
                 description: Movie was not found
         """
-        #movie = db.session.query(Movie).filter(Movie.title == moviename).first()
+
         db.session.delete(movie)
         db.session.commit()
         
@@ -781,13 +814,16 @@ class MovieItem(Resource):
             raise Conflict(description="Identical movie already exists.") from i_e
         return Response(
             status=201,
-            headers={"Location": url_for("movie", movie.title)}
+            headers={"Location": api.url_for(MovieItem, movie=movie)}
         )
 
 class MovieCollection(Resource):
     """Resource for getting all movies or adding a new."""
     #TODO: finish this missing get-method to get all movies
     def get(self):
+        """
+        Get all movies from the database
+        """
         movies = Movie.query.all()
         data = MovieMetaBuilder()
         data.add_namespace("mumeta", LINK_RELATIONS_URL)
@@ -797,8 +833,13 @@ class MovieCollection(Resource):
         data["items"] = []
         for movie in movies:
             data["items"].append(movie.serialize(short_form=True))
-        
-        response = Response(json.dumps(data), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype=MASON)
+
+        response = Response(
+            json.dumps(data),
+            200,
+            headers={'Access-Control-Allow-Origin': '*'},
+            mimetype=MASON
+            )
 
         return response
 
@@ -865,7 +906,7 @@ class MovieCollection(Resource):
             validator.validate(request.json)
         except ValidationError as v_e:
             raise BadRequest(description=str(v_e)) from v_e
-        
+
 
         #TODO: create deserialize method to Movie class to simplify this
         title = str(request.json["title"])
@@ -1050,9 +1091,9 @@ class ActorItem(Resource):
         """
         db.session.delete(actorname)
         db.session.commit()
-        
+
         return Response(status=204)
-        
+
 
     def get(self,actorname):
         """
@@ -1078,7 +1119,12 @@ class ActorItem(Resource):
         """
         print(actorname)
         body = actorname.serialize()
-        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype = MASON)
+        response = Response(
+            json.dumps(body),
+            200,
+            headers={'Access-Control-Allow-Origin': '*'},
+            mimetype = MASON
+            )
         return response
 
     def put(self, actorname):
@@ -1141,7 +1187,7 @@ class ActorItem(Resource):
         #TODO: test that this works
         except IntegrityError as i_e:
             raise Conflict(description="Identical actor already exists.") from i_e
-        
+
         return Response(
             status=204,
             headers={"Location": api.url_for(ActorItem, actorname=actorname)}
@@ -1162,7 +1208,12 @@ class StreamingConverter(BaseConverter):
 class StreamingCollection(Resource):
     """Resource for creating new streaming service or getting all"""
     #TODO: finish this missing get-method to get all streaming services
+    #TODO: documentation
     def get(self):
+        """
+        Get all streaming services from database.
+        ---
+        """
         services = StreamingService.query.all()
         data = MovieMetaBuilder()
         data.add_namespace("mumeta", LINK_RELATIONS_URL)
@@ -1173,7 +1224,11 @@ class StreamingCollection(Resource):
         for service in services:
             data["items"].append(service.serialize(short_form=True))
         #response = Response(json.dumps(data), 200, mimetype=MASON)
-        response = Response(json.dumps(data), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype=MASON)
+        response = Response(
+            json.dumps(data),
+            200,
+            headers={'Access-Control-Allow-Origin': '*'},
+            mimetype=MASON)
         return response
 
     def post(self):
@@ -1229,7 +1284,7 @@ class StreamingCollection(Resource):
             db.session.commit()
         except IntegrityError as i_e:
             raise Conflict(description="Identical streaming service already exists.") from i_e
-        
+
         return Response(
             status=201,
             headers={"Location": api.url_for("streaming", streamingservice=streaming_service.name)}
@@ -1266,7 +1321,12 @@ class StreamingItem(Resource):
                 description: Streaming service not found
         """
         body = streamingservice.serialize()
-        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype=MASON)
+        response = Response(
+            json.dumps(body),
+            200,
+            headers={'Access-Control-Allow-Origin': '*'},
+            mimetype=MASON
+            )
         return response
 
     def put(self,streamingservice):
@@ -1333,11 +1393,17 @@ def index():
              {'rel': 'StreamingItem', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['GET', 'PUT']}]
     body = {}
     body["links"] = links
-    response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype = MASON)
+    response = Response(
+        json.dumps(body),
+        200,
+        headers={'Access-Control-Allow-Origin': '*'},
+        mimetype = MASON
+        )
     return response
 
 @app.route("/moviemeta/link-relations/")
 def send_link_relations_html():
+    '''Link relations of our moviemeta hypermedia controls'''
     return "here be link relations"
 
 app.url_map.converters["movie"] = MovieConverter
@@ -1348,4 +1414,8 @@ api.add_resource(MovieCollection,"/movie/", endpoint = "movie")
 api.add_resource(ActorCollection,"/actor/", endpoint = "actor")
 api.add_resource(ActorItem,"/actor/<actorname:actorname>/", endpoint="actors")
 api.add_resource(StreamingCollection,"/streaming/", endpoint = "streaming")
-api.add_resource(StreamingItem,"/streaming/<streamingservice:streamingservice>/", endpoint = "streamings")
+api.add_resource(
+    StreamingItem,
+    "/streaming/<streamingservice:streamingservice>/",
+      endpoint = "streamings"
+    )
