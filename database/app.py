@@ -16,7 +16,6 @@ from jsonschema import validate, ValidationError, Draft7Validator
 from werkzeug.exceptions import NotFound, Conflict, BadRequest, UnsupportedMediaType
 from werkzeug.routing import BaseConverter
 from flasgger import Swagger, swag_from
-from flasgger import Swagger, swag_from
 from justwatch import JustWatch
 
 just_watch = JustWatch(country='FI')
