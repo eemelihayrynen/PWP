@@ -1,0 +1,121 @@
+description: Get list of all streaming services
+tags:
+  - streaming
+responses:
+  '200':
+    content:
+      application/vnd.mason+json:
+        example:
+          '@controls':
+            mumeta:add-streamingservice:
+              encoding: json
+              href: /streaming/
+              method: POST
+              schema:
+                $id: /schemas/streaming_services
+                properties:
+                  name:
+                    description: Name of the service
+                    type: string
+                required:
+                - name
+                type: object
+              title: Add a streamingservice
+            mumeta:streaminservices-all:
+              href: /streaming/?sortby={sortby}
+              isHrefTemplate: true
+              title: All streamingservices
+            self:
+              href: /streaming/
+          '@namespaces':
+            mumeta:
+              name: /moviemeta/link-relations#
+          items:
+          - '@controls':
+              mumeta:add-streamingservice:
+                encoding: json
+                href: /streaming/
+                method: POST
+                schema:
+                  $id: /schemas/streaming_services
+                  properties:
+                    name:
+                      description: Name of the service
+                      type: string
+                  required:
+                  - name
+                  type: object
+                title: Add a streamingservice
+              self:
+                href: /streaming/Netflix/
+            '@namespaces':
+              mumeta:
+                name: /moviemeta/link-relations#
+            id: 1
+            name: Netflix
+          - '@controls':
+              mumeta:add-streamingservice:
+                encoding: json
+                href: /streaming/
+                method: POST
+                schema:
+                  $id: /schemas/streaming_services
+                  properties:
+                    name:
+                      description: Name of the service
+                      type: string
+                  required:
+                  - name
+                  type: object
+                title: Add a streamingservice
+              self:
+                href: /streaming/Disney+/
+            '@namespaces':
+              mumeta:
+                name: /moviemeta/link-relations#
+            id: 2
+            name: Disney+
+          - '@controls':
+              mumeta:add-streamingservice:
+                encoding: json
+                href: /streaming/
+                method: POST
+                schema:
+                  $id: /schemas/streaming_services
+                  properties:
+                    name:
+                      description: Name of the service
+                      type: string
+                  required:
+                  - name
+                  type: object
+                title: Add a streamingservice
+              self:
+                href: /streaming/HBO Max/
+            '@namespaces':
+              mumeta:
+                name: /moviemeta/link-relations#
+            id: 3
+            name: HBO Max
+          - '@controls':
+              mumeta:add-streamingservice:
+                encoding: json
+                href: /streaming/
+                method: POST
+                schema:
+                  $id: /schemas/streaming_services
+                  properties:
+                    name:
+                      description: Name of the service
+                      type: string
+                  required:
+                  - name
+                  type: object
+                title: Add a streamingservice
+              self:
+                href: /streaming/Sky Showtime/
+            '@namespaces':
+              mumeta:
+                name: /moviemeta/link-relations#
+            id: 4
+            name: Sky Showtime

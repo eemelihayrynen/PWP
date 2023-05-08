@@ -41,6 +41,7 @@ app.config["SWAGGER"] = {
     "title": "Movie Search API",
     "openapi": "3.0.3",
     "uiversion": 3,
+    "doc_dir": "./doc",
 }
 
 MASON = "application/vnd.mason+json"
@@ -1209,10 +1210,10 @@ class StreamingCollection(Resource):
     """Resource for creating new streaming service or getting all"""
     #TODO: finish this missing get-method to get all streaming services
     #TODO: documentation
+    @swag_from("doc/streaming/get.yml")
     def get(self):
         """
         Get all streaming services from database.
-        ---
         """
         services = StreamingService.query.all()
         data = MovieMetaBuilder()
