@@ -37,11 +37,11 @@ To start the server after population, simply run:
 
 To run the functional tests, run:
 
-    pytest
+    pytest my_test.py
     
 And for test coverage, run:
        
-    pytest --cov-report term-missing --cov=app
+    pytest my_test.py --cov-report term-missing --cov=app
     
 ## API Documentation
 
