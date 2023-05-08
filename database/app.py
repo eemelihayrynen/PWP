@@ -5,7 +5,7 @@ https://lovelace.oulu.fi/ohjelmoitava-web/ohjelmoitava-web/
 https://github.com/enkwolf/pwp-course-sensorhub-api-example
 '''
 import json
-from flask import Flask, Response, request, jsonify
+from flask import Flask, Response, request, jsonify, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
@@ -33,6 +33,14 @@ app.config["SWAGGER"] = {
     "openapi": "3.0.3",
     "uiversion": 3,
 }
+
+MASON = "application/vnd.mason+json"
+LINK_RELATIONS_URL = "/moviemeta/link-relations#"
+
+MOVIE_ITEM_URL = "/movie/"
+ACTOR_ITEM_URL = "/actor/"
+STREAMING_ITEM_URL = "/streaming/"
+
 api = Api(app)
 db = SQLAlchemy(app)
 swagger = Swagger(app, template_file="doc/moviesearch.yml")
@@ -93,26 +101,30 @@ class Movie(db.Model):
         if short_form:
             return {"title": self.title}
 
-        actors = []
+        data = MovieMetaBuilder(
+            title = self.title,
+            rating = self.rating,
+            writer = self.writer,
+            release_year = self.release_year,
+            genres = self.genres,
+        )    
+        data["actors"] = []
         for actor in self.actors:
-            actors.append(actor.serialize())
-        directors = []
+            data["actors"].append(actor.first_name + " " + actor.last_name)
+        data["directors"] = []
         for director in self.directors:
-            directors.append(director.serialize())
-        streaming_services = []
+            data["directors"].append(director.first_name + " " + director.last_name)
+        data["streaming_services"] = []
         for streaming_service in self.streaming_services:
-            streaming_services.append(streaming_service.serialize(short_form=True))
-        return {
-            "title": self.title,
-            "comments": self.comments,
-            "rating": self.rating,
-            "writer": self.writer,
-            "release_year": self.release_year,
-            "genres": self.genres,
-            "actors": actors,
-            "directors": directors,
-            "streaming_services": streaming_services,
-        }
+            data["streaming_services"].append(streaming_service.name)
+        
+        data.add_namespace("mumeta", LINK_RELATIONS_URL)
+        data.add_control("self", href=request.path)
+
+        data.add_control_edit_movie(self)
+        data.add_control_delete_movie(self)
+
+        return data
 
     def deserialize(self, doc):
         '''De-serialize function for Movie resource'''
@@ -206,10 +218,17 @@ class Actor(db.Model):
 
     def serialize(self):
         '''Serialize function for Actor resource'''
-        return {
-            "first_name": self.first_name,
-            "last_name": self.last_name
-        }
+        data = MovieMetaBuilder(
+            first_name = self.first_name,
+            last_name = self.last_name
+        )
+        data.add_control("profile", href=ACTOR_ITEM_URL)
+        data.add_namespace("mumeta", LINK_RELATIONS_URL)
+        data.add_control("self", href=request.path)
+        data.add_control("collection", href=url_for("actor"))
+        data.add_control_edit_actor(self)
+        data.add_control_delete_actor(self)
+        return data
 
     def deserialize(self, doc):
         '''De-serialize function for Actor resource'''
@@ -295,15 +314,22 @@ class StreamingService(db.Model):
 
     def serialize(self, short_form=False):
         '''Serialize function for StreamingService resource'''
+        data = MovieMetaBuilder(
+            name = self.name,
+            id = self.id
+        )
+        data["movies"] = []
+        data.add_control("profile", href=STREAMING_ITEM_URL)
         if short_form:
             return {"name": self.name}
-        movies = []
         for movie in self.movies:
-            movies.append(movie.serialize(short_form=True))
-        return {
-            "name": self.name,
-            "movies": movies
-        }
+            data["movies"].append(movie.serialize(short_form=True))
+        
+        data.add_namespace("mumeta", LINK_RELATIONS_URL)
+        data.add_control("self", href=request.path)
+        data.add_control_add_streamingservice()
+        
+        return data
 
     def deserialize(self, doc):
         '''De-serialize function for StreamingService resource'''
@@ -323,6 +349,161 @@ class StreamingService(db.Model):
             "type": "string"
         }
         return schema
+class MasonBuilder(dict):
+    """
+    A convenience class for managing dictionaries that represent Mason
+    objects. It provides nice shorthands for inserting some of the more
+    elements into the object but mostly is just a parent for the much more
+    useful subclass defined next. This class is generic in the sense that it
+    does not contain any application specific implementation details.
+    
+    Note that child classes should set the *DELETE_RELATION* to the application
+    specific relation name from the application namespace. The IANA standard
+    does not define a link relation for deleting something.
+
+    Taken from the course material
+    """
+
+    DELETE_RELATION = ""
+
+    def add_error(self, title, details):
+
+
+        self["@error"] = {
+            "@message": title,
+            "@messages": [details],
+        }
+
+    def add_namespace(self, ns, uri):
+ 
+
+        if "@namespaces" not in self:
+            self["@namespaces"] = {}
+
+        self["@namespaces"][ns] = {
+            "name": uri
+        }
+
+    def add_control(self, ctrl_name, href, **kwargs):
+
+
+        if "@controls" not in self:
+            self["@controls"] = {}
+
+        self["@controls"][ctrl_name] = kwargs
+        self["@controls"][ctrl_name]["href"] = href
+        
+    def add_control_post(self, ctrl_name, title, href, schema):
+
+    
+        self.add_control(
+            ctrl_name,
+            href,
+            method="POST",
+            encoding="json",
+            title=title,
+            schema=schema
+        )
+
+    def add_control_put(self, title, href, schema):
+
+
+        self.add_control(
+            "edit",
+            href,
+            method="PUT",
+            encoding="json",
+            title=title,
+            schema=schema
+        )
+        
+    def add_control_delete(self, title, href):
+
+        
+        self.add_control(
+            "mumeta:delete",
+            href,
+            method="DELETE",
+            title=title,
+        )
+
+class MovieMetaBuilder(MasonBuilder):
+    def add_control_movies_all(self):
+        self.add_control(
+            "mumeta:movies-all",
+            url_for("movie"),
+            title="All movies"
+        )
+        
+    def add_control_actors_all(self):
+        self.add_control(
+            "mumeta:actors-all",
+            url_for("albums") + "?sortby={sortby}",
+            title="All actors",
+            isHrefTemplate=True,
+        )
+    def add_control_streamingservices_all(self):
+        self.add_control(
+            "mumeta:streaminservices-all",
+            url_for("streaming") + "?sortby={sortby}",
+            title="All streamingservices",
+            isHrefTemplate=True,
+        )
+
+    def add_control_add_movie(self):
+        
+        href = url_for("movie")
+        title = "Add a new movie"
+
+        self.add_control_post(
+            "mumeta:add-movie",
+            title,
+            href,
+            Movie.json_schema()
+        )
+
+    def add_control_add_actor(self):
+        self.add_control_post(
+            "mumeta:add-artist",
+            "Add a new artist",
+            url_for("actor"),
+            Actor.json_schema()
+        )
+
+    def add_control_add_streamingservice(self):
+        self.add_control_post(
+            "mumeta:add-streamingservice",
+            "Add a streamingservice",
+            url_for("streaming"),
+            StreamingService.json_schema()
+        )
+
+    def add_control_delete_movie(self, movie):
+        self.add_control_delete(
+            "Delete this movie",
+            url_for("movie", movie=movie.title),
+        )
+    
+    def add_control_delete_actor(self, actor):
+        self.add_control_delete(
+            "Delete this actor",
+            url_for("actor", actor = actor.first_name + " " + actor.last_name),
+        )
+
+    def add_control_edit_movie(self, movie):
+        self.add_control_put(
+            "Edit this moviee",
+            url_for("movie", movie = movie.title),
+            Movie.json_schema()
+        )
+    
+    
+    def add_control_edit_actor(self, actor):
+        self.add_control_put(
+            "Edit this artist",
+            url_for("actor", actor = actor.first_name + " " + actor.last_name),
+            Actor.json_schema()
+        )
 
 class MovieConverter(BaseConverter):
     '''Helper class to get Movie from url and url from Movie'''
@@ -426,11 +607,9 @@ class MovieItem(Resource):
         #db_movie_dict = db_movie.__dict__
         #del db_movie_dict['_sa_instance_state']
         #/movie/<movie:movie>/
-        check_streaming(self, movie)
+        #check_streaming(self, movie) THIS DOES NOT WORK RN
         body = movie.serialize()
-        links = [{'rel': 'self', 'href': '/movie/<movie:movie>/', "methods": ["DELETE", "PUT"]}]
-        body['links'] = links
-        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype = MASON)
         #return movie.serialize()
         return response
 
@@ -452,8 +631,10 @@ class MovieItem(Resource):
         #movie = db.session.query(Movie).filter(Movie.title == moviename).first()
         db.session.delete(movie)
         db.session.commit()
-        Hypermedia = [{'rel': 'self', 'href': '/movie/<movie:movie>/', "methods": ["GET", "PUT"]}]
-        return jsonify({'links': Hypermedia})
+        
+        return Response(
+            status=204
+        )
 
     def put(self, movie):
         """
@@ -586,20 +767,26 @@ class MovieItem(Resource):
 
         except IntegrityError as i_e:
             raise Conflict(description="Identical movie already exists.") from i_e
-        Hypermedia = [{'rel': 'self', 'href': '/movie/<movie:movie>/', "methods": ["GET", "PUT"]}]
-        return jsonify({'links': Hypermedia})
+        return Response(
+            status=201,
+            headers={"Location": url_for("movie", movie.title)}
+        )
 
 class MovieCollection(Resource):
     """Resource for getting all movies or adding a new."""
     #TODO: finish this missing get-method to get all movies
     def get(self):
         movies = Movie.query.all()
-        body = []
+        data = MovieMetaBuilder()
+        data.add_namespace("mumeta", LINK_RELATIONS_URL)
+        data.add_control("self", href=request.path)
+        data.add_control_movies_all()
+        data.add_control_add_movie()
+        data["items"] = []
         for movie in movies:
-            body.append(movie.serialize(short_form=True))
-        links = [{'rel': 'self', 'href': '/movie/', "methods": ["Post"]}]
-        body['links'] = links
-        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+            data["items"].append(movie.serialize(short_form=True))
+        
+        response = Response(json.dumps(data), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype=MASON)
 
         return response
 
@@ -751,8 +938,10 @@ class MovieCollection(Resource):
             db.session.commit()
         except IntegrityError as i_e:
             raise Conflict(description="Identical movie already exists.") from i_e
-        links = [{'rel': 'self', 'href': '/movie/', "methods": ["GET"]}]
-        return jsonify({'links': links}), 201
+        return Response(
+            status = 201,
+            headers={"Location": url_for("movie")}
+        )
 
 class ActorConverter(BaseConverter):
     '''Helper class to get Actor from url and url from actor'''
@@ -849,9 +1038,8 @@ class ActorItem(Resource):
         """
         db.session.delete(actorname)
         db.session.commit()
-        links = [{'rel': 'self', 'href': '/actor/<actorname:actorname>/', "methods": ["GET", "PUT"]},
-                 {'rel': 'self', 'href': '/actor/', "methods": ["POST"]}]
-        return jsonify({'links': links}), 204
+        
+        return Response(status=204)
         
 
     def get(self,actorname):
@@ -878,10 +1066,7 @@ class ActorItem(Resource):
         """
         print(actorname)
         body = actorname.serialize()
-        links = [{'rel': 'self', 'href': '/actor/<actorname:actorname>/', "methods": ["DELETE", "PUT"]},
-                 {'rel': 'self', 'href': '/actor/', "methods": ["POST"]}]
-        body['links'] = links
-        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype = MASON)
         return response
 
     def put(self, actorname):
@@ -944,9 +1129,8 @@ class ActorItem(Resource):
         #TODO: test that this works
         except IntegrityError as i_e:
             raise Conflict(description="Identical actor already exists.") from i_e
-        links = [{'rel': 'self', 'href': '/actor/<actorname:actorname>/', "methods": ["DELETE", "PUT"]},
-                 {'rel': 'self', 'href': '/actor/', "methods": ["POST"]}]
-        return Response(jsonify({'links': links}),
+        
+        return Response(
             status=204,
             headers={"Location": api.url_for(ActorItem, actorname=actorname)}
             )
@@ -968,13 +1152,15 @@ class StreamingCollection(Resource):
     #TODO: finish this missing get-method to get all streaming services
     def get(self):
         services = StreamingService.query.all()
-        body = []
+        data = MovieMetaBuilder()
+        data.add_namespace("mumeta", LINK_RELATIONS_URL)
+        data.add_control("self", href=request.path)
+        data.add_control_streamingservices_all()
+        data.add_control_add_streamingservice()
+        data["items"] = []
         for service in services:
-            body.append(service.serialize(short_form=True))
-        links = [{'rel': 'self', 'href': '/streaming/', "methods": ["POST"]},
-                 {'rel': 'self', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['GET', 'PUT']}]
-        body["links"] = links
-        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+            data["items"].append(service.serialize(short_form=True))
+        response = Response(json.dumps(data), 200, mimetype=MASON)
 
         return response
 
@@ -1031,13 +1217,10 @@ class StreamingCollection(Resource):
             db.session.commit()
         except IntegrityError as i_e:
             raise Conflict(description="Identical streaming service already exists.") from i_e
-        links = [{'rel': 'self', 'href': '/streaming/', "methods": ["GET"]},
-                 {'rel': 'self', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['GET', 'PUT']}]
-        body = []
-        body["links"] = links
-        return Response(json.dumps(body),
+        
+        return Response(
             status=201,
-            headers={"Location": api.url_for(StreamingItem, streamingservice=streaming_service)}
+            headers={"Location": api.url_for("streaming", streamingservice=streaming_service.name)}
             )
 
 class StreamingItem(Resource):
@@ -1071,10 +1254,7 @@ class StreamingItem(Resource):
                 description: Streaming service not found
         """
         body = streamingservice.serialize()
-        links = [{'rel': 'self', 'href': '/streaming/', "methods": ["GET", "POST"]},
-                 {'rel': 'self', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['PUT']}]
-        body["links"] = links
-        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype=MASON)
         return response
 
     def put(self,streamingservice):
@@ -1128,11 +1308,6 @@ class StreamingItem(Resource):
             db.session.commit()
         except IntegrityError as i_e:
             raise Conflict(description="Identical streaming service already exists.") from i_e
-        body = []
-        links = [{'rel': 'self', 'href': '/streaming/', "methods": ["GET", "POST"]},
-                 {'rel': 'self', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['GET']}]
-        body["links"] = links
-        response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
         return Response(status=204)
 
 @app.route("/api/")
@@ -1144,14 +1319,21 @@ def index():
              {'rel': 'ActorItem', 'href': "/actor/<actorname:actorname>/", 'methods': ['GET', 'PUT', 'DELETE']},
              {'rel': 'StreamingCollection', 'href': "/streaming/", 'methods': ['GET', 'POST']},
              {'rel': 'StreamingItem', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['GET', 'PUT']}]
-    return jsonify({'links': links})
+    body = {}
+    body["links"] = links
+    response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+    return response
+
+@app.route("/moviemeta/link-relations/")
+def send_link_relations_html():
+    return "here be link relations"
 
 app.url_map.converters["movie"] = MovieConverter
 app.url_map.converters["actorname"] = ActorConverter
 app.url_map.converters["streamingservice"] = StreamingConverter
-api.add_resource(MovieItem,"/movie/<movie:movie>/")
-api.add_resource(MovieCollection,"/movie/")
-api.add_resource(ActorCollection,"/actor/")
-api.add_resource(ActorItem,"/actor/<actorname:actorname>/")
-api.add_resource(StreamingCollection,"/streaming/")
-api.add_resource(StreamingItem,"/streaming/<streamingservice:streamingservice>/")
+api.add_resource(MovieItem,"/movie/<movie:movie>/", endpoint = "movies")
+api.add_resource(MovieCollection,"/movie/", endpoint = "movie")
+api.add_resource(ActorCollection,"/actor/", endpoint = "actor")
+api.add_resource(ActorItem,"/actor/<actorname:actorname>/", endpoint="actors")
+api.add_resource(StreamingCollection,"/streaming/", endpoint = "streaming")
+api.add_resource(StreamingItem,"/streaming/<streamingservice:streamingservice>/", endpoint = "streamings")
