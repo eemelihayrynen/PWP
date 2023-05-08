@@ -40,12 +40,43 @@
   const container = document.getElementById('dataContainer');
   const input_text = document.getElementById('floatingInput').value
 
+  function displaySSs(service) {
+    return`
+    <p>${service.name}</p>
+    `
+  }
+  function displayDirectors(director) {
+    return`
+    <p>${director.first_name} ${director.last_name}</p>
+    `
+  }
+  function displayActors(actor) {
+    return`
+    <p>${actor.first_name} ${actor.last_name}</p>
+    `
+  }
+
   button.addEventListener('click', () => {
   urli = 'http://127.0.0.1:5000/movie/' + document.getElementById('floatingInput').value + "/";
   fetch(urli)
 	.then(response => response.json())
 	.then(data => {
-	  container.innerHTML = JSON.stringify(data);
+	  //container.innerHTML = JSON.stringify(data);
+    container.innerHTML = `
+    <div>
+      <h1>${data.title}</h1>
+      <p>Rating: ${data.rating}</p>
+      <p>Year: ${data.release_year}</p>
+      <p>Writers: ${data.writer}</p>
+      <p>Genres: ${data.genres}</p>
+      <p>Available in following streaming services:</p>
+      ${data.streaming_services.map(displaySSs).join('')}
+      <p>Directors:</p>
+      ${data.directors.map(displayDirectors).join('')}
+      <p>Actors:</p>
+      ${data.actors.map(displayActors).join('')}
+    <div>
+    `;
 	})
 	.catch(error => {
 	  console.error(error);
