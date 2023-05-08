@@ -18,6 +18,15 @@ We recommend using Python virtual environments to run the API code.
 
         pip install -r requirements.txt
 
+### Setup tmdb for fetching poster images
+
+Our API allows searching corresponding movie posters from the TMBD's API.
+Link to the poster image is given as a hypermedia control in movie item's get request.
+
+In order to use the API, you must add your own API key to the server code:
+
+    tmdb.api_key = 'ADD_KEY'
+
 ## Populating the database
 The database can be populated using the script inside the database folder adds top 250 imdb movies. Example of moviesearch.db can be found under database/instance.
 
@@ -32,6 +41,11 @@ The full population script from IMDB/Rottentomatoes is still WIP
 To start the server after population, simply run:
 
     flask run
+
+## Using the API client
+
+The client composes of static html files.
+To use the client, open any of the html files in your web browser.
 
 ## Testing the API
 
