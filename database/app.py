@@ -1321,7 +1321,7 @@ def index():
              {'rel': 'StreamingItem', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['GET', 'PUT']}]
     body = {}
     body["links"] = links
-    response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'})
+    response = Response(json.dumps(body), 200, headers={'Access-Control-Allow-Origin': '*'}, mimetype = MASON)
     return response
 
 @app.route("/moviemeta/link-relations/")
