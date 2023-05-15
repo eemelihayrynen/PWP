@@ -121,7 +121,7 @@ class Movie(db.Model):
                 title = self.title
             )
             short_data.add_namespace("mumeta", LINK_RELATIONS_URL)
-            short_data.add_control("self", href=request.path)
+            short_data.add_control("self", href=api.url_for(MovieItem, movie=self))
 
             short_data.add_control_edit_movie(self)
             short_data.add_control_delete_movie(self)
@@ -139,7 +139,7 @@ class Movie(db.Model):
             data["streaming_services"].append(streaming_service.serialize(short_form=True))
 
         data.add_namespace("mumeta", LINK_RELATIONS_URL)
-        data.add_control("self", href=request.path)
+        data.add_control("self", href=api.url_for(MovieItem, movie=self))
 
         data.add_control_edit_movie(self)
         data.add_control_delete_movie(self)
@@ -537,7 +537,7 @@ class MovieMetaBuilder(MasonBuilder):
 
         self.add_control_movie_poster(
             "Get movie poster",
-            getMoviePosterPath(movie.title)
+            get_movie_poster_path(movie.title)
         )
 
 class MovieConverter(BaseConverter):
@@ -551,7 +551,7 @@ class MovieConverter(BaseConverter):
     def to_url(self, value):
         return value.title
 
-def getMoviePosterPath(title):
+def get_movie_poster_path(title):
     '''Helper function to get movie poster from movie title using tmbd API search'''
     #print(title)
     if tmdb.api_key == "ADD_KEY":
@@ -677,7 +677,6 @@ class MovieItem(Resource):
 
         db.session.delete(movie)
         db.session.commit()
-        
         return Response(
             status=204
         )
