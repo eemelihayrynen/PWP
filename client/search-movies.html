@@ -42,7 +42,7 @@
 
   function displaySSs(service) {
     return`
-    <p>${service.name}</p>
+    <a href="browse-streaming-services.html?url=${service["@controls"]["self"]["href"]}">${service.name}</a>
     `
   }
   function displayDirectors(director) {
@@ -56,14 +56,8 @@
     <p>${actor.first_name} ${actor.last_name}</p>
     `
   }
-  
 
-  button.addEventListener('click', () => {
-  urli = 'http://127.0.0.1:5000/movie/' + document.getElementById('floatingInput').value + "/";
-  fetch(urli)
-	.then(response => response.json())
-	.then(data => {
-	  //container.innerHTML = JSON.stringify(data);
+  function displayMovie(data){
     container.innerHTML = `
     <div class="row mt-2">
       <div class="col">
@@ -87,12 +81,39 @@
     
     </div>
     `;
-	})
-	.catch(error => {
-	  console.error(error);
-    container.innerHTML = `<div class="alert alert-danger" role="alert">Movie not found!</div>`
-	});
+  }
+
+  function getMovie(url){
+    fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      //container.innerHTML = JSON.stringify(data);
+      displayMovie(data);
+    })
+    .catch(error => {
+      console.error(error);
+      container.innerHTML = `<div class="alert alert-danger" role="alert">Movie not found!</div>`
+    });
+  }
+  
+
+  button.addEventListener('click', () => {
+  urli = 'http://127.0.0.1:5000/movie/' + document.getElementById('floatingInput').value + "/";
+  getMovie(urli)
   });
+</script>
+<script>
+  const params = new URLSearchParams(window.location.search)
+  console.log(params.get('title'))
+  title = params.get('title');
+  urli = params.get('url');
+  if(urli != null){
+    getMovie("http://127.0.0.1:5000/" + urli);
+  }
+  else if(title != null){
+    urli = "http://127.0.0.1:5000/movie/" + title + "/";
+    getMovie(urli);
+  }
 </script>
 </body>
 </html>

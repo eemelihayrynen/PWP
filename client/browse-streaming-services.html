@@ -43,8 +43,25 @@
   function displayMovie(movie){
     console.log(movie);
     return `
-    <li class="list-group-item">${movie.title}</li>
+    <a href="search-movies.html?url=${movie["@controls"]["self"]["href"]}" class="list-group-item list-group-item-action">${movie.title}</a>
     `;
+  }
+
+  function getService(url){
+    fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      //console.log(data);
+      container.innerHTML = `
+      <h2>Movies streaming in ${data.name}:</h2>
+      <div class="list-group">
+      ${data.movies.map(displayMovie).join('')}
+      </div>
+      `
+    })
+    .catch(error => {
+      console.error(error);
+    });
   }
 
   button.addEventListener('click', () => {
@@ -53,20 +70,7 @@
     console.log(service_name)
     urli = 'http://127.0.0.1:5000/streaming/'+ service_name + "/";
     console.log(urli);
-    fetch(urli)
-    .then(response => response.json())
-    .then(data => {
-      //console.log(data);
-      container.innerHTML = `
-      <h2>Movies streaming in ${service_name}:</h2>
-      <ul class="list-group">
-      ${data.movies.map(displayMovie).join('')}
-      </ul>
-      `
-    })
-    .catch(error => {
-      console.error(error);
-    });
+    getService(urli);
   });
 </script>
 <script type="text/javascript">
@@ -87,6 +91,19 @@
 	  console.error(error);
 	});
 
+</script>
+<script>
+  const params = new URLSearchParams(window.location.search)
+  console.log(params.get('url'))
+  name = params.get('name');
+  urli = params.get('url');
+  if(urli != null){
+    getService("http://127.0.0.1:5000/" + urli);
+  }
+  else if(name != null){
+    urli = "http://127.0.0.1:5000/streaming/" + name + "/";
+    getService(urli);
+  }
 </script>
 </body>
 </html>

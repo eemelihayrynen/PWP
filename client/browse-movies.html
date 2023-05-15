@@ -36,7 +36,7 @@
   function displayMovie(movie){
     //console.log(movie);
     return `
-    <li class="list-group-item">${movie.title}</li>
+    <a href="search-movies.html?url=${movie["@controls"]["self"]["href"]}" class="list-group-item list-group-item-action">${movie.title}</a>
     `;
   }
 
@@ -48,9 +48,9 @@
 	  //container.innerHTML = JSON.stringify(data);
     container.innerHTML = `
     <h2>Movies found from database:</h2>
-    <ul class="list-group">
+    <div class="list-group">
     ${data.items.map(displayMovie).join('')}
-    </ul>
+    </div>
     `
 	})
 	.catch(error => {
