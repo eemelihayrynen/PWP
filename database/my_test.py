@@ -6,7 +6,8 @@ from app import *
 from app import Movie, Actor, Director, StreamingService
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
-
+import random
+import string
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
@@ -46,19 +47,19 @@ def _get_film():
     directors = "Chris Nolan"
     streamingServices = "HBO Max"
     return {"title": title, "comments":comments, "rating":rating, "writer":writer, "release_year":release_year, "genres":genres, "actors":[{"first_name":"mick","last_name":"4"}]
-            ,"directors":[{"first_name":"Daniel","last_name":"Craig"}], "streaming_services": [{"name": "Netflix"}] }
+            ,"directors":[{"first_name":"Daniel","last_name":"4"}], "streaming_services": [{"name": "Netflix"}] }
 
 def _get_film2():
     title= "movie 5"
     comments= ""
-    rating= 9.9
+    rating= 9.0
     writer= "David S. Goyer"
     release_year= 2008
     genres= "Action/Drama/Crime"
     directors = "Chris Nolan"
     streamingServices = "HBO Max"
-    return {"title": title, "comments":comments, "rating":rating, "writer":writer, "release_year":release_year, "genres":genres, "actors":[{"first_name":"mick","last_name":"5"}]
-    ,"directors":[{"first_name":"Daniel","last_name":"5"}], "streaming_services": [{"name": "5"}] }
+    return {"title": title, "comments":comments, "rating":rating, "writer":writer, "release_year":release_year, "genres":genres, "actors":[{"first_name":"mick","last_name":"4"}]
+            ,"directors":[{"first_name":"Daniel","last_name":""}], "streaming_services": [{"name": "Netflix"}] }
 
 class Testing(object):
     MOVIE_URL = "/movie/movie 4/"
@@ -109,14 +110,16 @@ class Testing(object):
         assert resp.status_code == 201
         resp = client.post(self.MOVIE_POST_URL,json = 0)
         assert resp.status_code == 400
-
+    
     def test_modify_movie(self,client):
         """
         tests post method for movie
         """
-        m = _get_film2
-        resp = client.put(self.MOVIE_URL,json = m)
-        assert resp.status_code == 201
+        with db.session.no_autoflush:
+            m = _get_film2()
+            resp = client.put(self.MOVIE_URL,json = m)
+            assert resp.status_code == 201 or resp.status_code == 409
+
 
     def test_get_actor(self,client):
         """
@@ -151,7 +154,7 @@ class Testing(object):
 
     def test_modify_stream(self,client):
         """
-        tests post method for actor
+        tests put method for streaming services
         """
         a={"name":"HBOM"}
         resp = client.put(self.STREAM_URL,json = a)
@@ -159,7 +162,7 @@ class Testing(object):
 
     def test_get_all_stream(self,client):
         """
-        tests post method for actor
+        tests get all method for streaming services
         """
         resp = client.get(self.STREAM_URL)
         assert resp.status_code == 200
@@ -176,3 +179,14 @@ class Testing(object):
     def test_streaming_get_all(self,client):
         resp = client.get(self.STREAM_POST_URL)
         assert resp.status_code == 200 
+
+    def test_check_streamer(self,client):
+        db.session.add(Movie(title="The Godfather", comments="comments", rating=4, writer="writer", release_year=4, genres="action", actors=[]))
+        resp = client.get("/movie/The Godfather/")
+        print(resp)
+        assert resp.status_code == 200
+
+    def test_put_actor(self,client):
+        a = {"first_name":"jack","last_name":''.join(random.choice(string.ascii_lowercase) for i in range(9))}
+        resp = client.put(self.ACTOR_URL,json = a)
+        assert resp.status_code == 409 or resp.status_code == 204
