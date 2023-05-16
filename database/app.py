@@ -569,6 +569,16 @@ def check_streaming(movie):
     """
     This function when called will check if the existing movie has the correct streaming data 
     """
+    movie_dict={
+        "hbm":"HBO Max",
+        "hbo":"HBO Max",
+        "dnp":"Disney Plus",
+        "nfx":"Netflix",
+        "yle":"Yle Areena",
+        "rtu":"Ruutu",
+        "prv":"Amazon Prime Video",
+        "vip":"Viaplay"
+    }
     results = just_watch.search_for_item(query=movie.title)
     j,ss1 = 0,""
     try:
@@ -576,29 +586,8 @@ def check_streaming(movie):
             try:
                 if results["items"][0]["offers"][j]["monetization_type"] == "flatrate" or results["items"][0]["offers"][j]["monetization_type"] == "free":
                     streamer = results["items"][0]["offers"][j]["package_short_name"]
-
-                    if streamer == "hbm" or streamer == "hbo":
-                        ss1 = "HBO Max"
-                        break
-                    elif streamer == "dnp":
-                        ss1 = "Disney Plus"
-                        break
-                    elif streamer == "nfx":
-                        ss1 = "Netflix"
-                        break
-                    elif streamer == "yle":
-                        ss1 = "Yle Areena"
-                        break
-                    elif streamer == "rtu":
-                        ss1 = "Ruutu"
-                        break
-                    elif streamer == "prv":
-                        ss1 = "Amazon Prime Video"
-                        break
-                    elif streamer == "vip":
-                        ss1 = "Viaplay"
-                        break
-
+                    if streamer in movie_dict:
+                        ss1 = movie_dict[streamer]
             except IndexError:
                 print("no work")
                 break
@@ -650,6 +639,7 @@ class MovieItem(Resource):
             '404':
                 description: Movie was not found from server
         """
+        check_streaming(movie)
         body = movie.serialize()
         response = Response(
             json.dumps(body),
