@@ -1,0 +1,31 @@
+summary: Edit actor in the database
+description: Edit actor in the database
+tags:
+  - actor
+parameters:
+  - $ref: '#/components/parameters/actorname'
+requestBody:
+  description: JSON formatted data
+  content:
+    application/JSON:
+      schema:
+        $ref: '#/components/schemas/Actor'
+      example:
+        fist_name: Scarlett
+        last_name: Johansson
+responses:
+  '204':
+    description: Actor modified successfully
+    headers:
+      Location:
+        description: URI of the actor modified
+        schema:
+          type: string
+  '400':
+    description: Bad request/Invalid JSON Schema.
+  '404':
+    description: Actor was not found
+  '409':
+    description: Identical actor exists
+  '415':
+    description: 'Unsupported media type, JSON required.'

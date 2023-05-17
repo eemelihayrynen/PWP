@@ -1,0 +1,41 @@
+summary: Post a new movie
+description: Post a new movie
+tags:
+  - movie
+requestBody:
+  description: JSON formatted data
+  content:
+    application/JSON:
+      schema:
+        $ref: '#/components/schemas/Movie'
+      example:
+        title: The Lord of the Rings The Fellowship of the Ring
+        comments: Very good. I like.
+        rating: 10
+        writer: 'Fran Walsh, Philippa Boyens'
+        release_year: 2001
+        genres: Fantasy
+        actors:
+          - first_name: Elijah
+            last_name: Wood
+          - first_name: Ian
+            last_name: McKellen
+        directors:
+          - first_name: Peter
+            last_name: Jackson
+        streaming_services:
+          - name: HBO Max
+responses:
+  '201':
+    description: Movie added successfully
+    headers:
+      Location:
+        description: URI of the movie added
+        schema:
+          type: string
+  '400':
+    description: Bad request/Invalid JSON Schema.
+  '409':
+    description: Identical Movie exists.
+  '415':
+    description: 'Unsupported media type, JSON required.'

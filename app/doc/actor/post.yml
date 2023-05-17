@@ -1,0 +1,27 @@
+summary: Post new actor to the database
+description: Post new actor to the database
+tags:
+  - actor
+requestBody:
+  description: JSON formatted data
+  content:
+    application/JSON:
+      schema:
+        $ref: '#/components/schemas/Actor'
+      example:
+        fist_name: Scarlett
+        last_name: Johansson
+responses:
+  '201':
+    description: Actor added successfully
+    headers:
+      Location:
+        description: URI of the actor added
+        schema:
+          type: string
+  '400':
+    description: Bad request/Invalid JSON Schema.
+  '409':
+    description: Identical actor exists
+  '415':
+    description: 'Unsupported media type, JSON required.'

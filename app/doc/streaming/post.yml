@@ -1,0 +1,26 @@
+summary: Post new streaming service to the database
+description: Post new streaming service to the database
+tags:
+  - streaming
+requestBody:
+  description: JSON formatted data
+  content:
+    application/JSON:
+      schema:
+        $ref: '#/components/schemas/StreamingService'
+      example:
+        name: Netflix
+responses:
+  '201':
+    description: StreamingService added successfully
+    headers:
+      Location:
+        description: URI of the streaming service added
+        schema:
+          type: string
+  '400':
+    description: Bad request/Invalid JSON Schema.
+  '409':
+    description: Identical streaming service exists
+  '415':
+    description: 'Unsupported media type, JSON required.'

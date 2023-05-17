@@ -1,0 +1,28 @@
+summary: Modify streaming service in the database
+description: Modify streaming service in the database
+tags:
+  - streaming
+parameters:
+  - $ref: '#/components/parameters/streamingservice'
+requestBody:
+  description: JSON formatted data
+  content:
+    application/JSON:
+      schema:
+        $ref: '#/components/schemas/StreamingService'
+      example:
+        name: Netflix
+responses:
+  '204':
+    description: StreamingService modified successfully
+    headers:
+      Location:
+        description: URI of the streaming service added
+        schema:
+          type: string
+  '400':
+    description: Bad request/Invalid JSON Schema.
+  '409':
+    description: Identical streaming service exists
+  '415':
+    description: 'Unsupported media type, JSON required.'

@@ -1,0 +1,12 @@
+summary: Get list of all movies in the database
+description: Get list of all movies in the database
+tags:
+  - movie
+responses:
+  '200':
+    description: Got movies successfully
+    content:
+      application/JSON:
+        schema:
+          $ref: '#/components/schemas/MovieShort'
+        example:

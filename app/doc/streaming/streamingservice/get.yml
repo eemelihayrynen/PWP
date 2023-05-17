@@ -1,0 +1,24 @@
+summary: Get a streaming service name and list of all titles in it.
+description: Get a streaming service name and list of all titles in it.
+tags:
+  - streaming
+parameters:
+  - $ref: '#/components/parameters/streamingservice'
+responses:
+  '200':
+    description: Got movie details successfully
+    content:
+      application/JSON:
+        schema:
+          $ref: '#/components/schemas/StreamingServiceShort'
+        example:
+          name: Netflix
+          movies:
+            - movie:
+                title: Batman Begins
+            - movie:
+                title: The Dark Knight
+            - movie:
+                title: The Dark Knight Rises
+  '404':
+    description: Streaming service not found

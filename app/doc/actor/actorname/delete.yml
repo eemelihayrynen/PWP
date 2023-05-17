@@ -1,0 +1,11 @@
+summary: Delete actor by name
+description: Delete actor by name
+tags:
+  - actor
+parameters:
+  - $ref: '#/components/parameters/actorname'
+responses:
+  '204':
+    description: Deleted actor successfully
+  '404':
+    description: Actor was not found

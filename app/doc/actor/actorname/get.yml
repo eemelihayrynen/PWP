@@ -1,0 +1,18 @@
+summary: Get actor by name
+description: Get actor by name
+tags:
+  - actor
+parameters:
+  - $ref: '#/components/parameters/actorname'
+responses:
+  '200':
+    description: Got actor successfully
+    content:
+      application/JSON:
+        schema:
+          $ref: '#/components/schemas/Actor'
+        example:
+          first_name: Emma
+          last_name: Watson
+  '404':
+    description: Actor was not found

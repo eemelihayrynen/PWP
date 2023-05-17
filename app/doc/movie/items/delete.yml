@@ -1,0 +1,11 @@
+summary: Delete movie from database
+description: Delete movie by name
+tags:
+  - movie
+parameters:
+  - $ref: '#/components/parameters/movie'
+responses:
+  '204':
+    description: Deleted movie successfully
+  '404':
+    description: Movie was not found

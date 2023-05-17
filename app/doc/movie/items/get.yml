@@ -1,0 +1,32 @@
+summary: Get movie details by title
+description: Get a movie by title
+tags:
+  - movie
+parameters:
+  - $ref: '#/components/parameters/movie'
+responses:
+  '200':
+    description: Got movie details successfully
+    content:
+      application/JSON:
+        schema:
+          $ref: '#/components/schemas/Movie'
+        example:
+          title: The Lord of the Rings The Fellowship of the Ring
+          comments: Very good. I like.
+          rating: 10
+          writer: 'Fran Walsh, Philippa Boyens'
+          release_year: 2001
+          genres: Fantasy
+          actors:
+            - first_name: Elijah
+              last_name: Wood
+            - first_name: Ian
+              last_name: McKellen
+          directors:
+            - first_name: Peter
+              last_name: Jackson
+          streaming_services:
+            - name: HBO Max
+  '404':
+    description: Movie was not found from server

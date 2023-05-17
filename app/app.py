@@ -603,41 +603,10 @@ def check_streaming(movie):
 
 class MovieItem(Resource):
     """Resource for getting (searching) existing movie or modifying it."""
+    @swag_from("doc/movie/items/get.yml")
     def get(self, movie):
         """
         Get a movie with title
-        ---
-        description: Get a movie by title
-        tags:
-            - movie
-        parameters:
-        - $ref: '#/components/parameters/movie'
-        responses:
-            '200':
-                description: Got movie details successfully
-                content:
-                    application/JSON:
-                        schema:
-                            $ref: '#/components/schemas/Movie'
-                        example:
-                            title: The Lord of the Rings The Fellowship of the Ring
-                            comments: Very good. I like.
-                            rating: 10
-                            writer: Fran Walsh, Philippa Boyens
-                            release_year: 2001
-                            genres: Fantasy
-                            actors:
-                                - first_name: Elijah
-                                  last_name: Wood
-                                - first_name: Ian
-                                  last_name: McKellen
-                            directors:
-                                - first_name: Peter
-                                  last_name: Jackson
-                            streaming_services:
-                                - name: HBO Max
-            '404':
-                description: Movie was not found from server
         """
         check_streaming(movie)
         body = movie.serialize()
@@ -649,20 +618,10 @@ class MovieItem(Resource):
             )
         return response
 
+    @swag_from("doc/movie/items/delete.yml")
     def delete(self,movie):
         """
         Method for deleting a movie
-        ---
-        description: Delete movie by name
-        tags:
-            - movie
-        parameters:
-          - $ref: '#/components/parameters/movie'
-        responses:
-            '204':
-                description: Deleted movie successfully
-            '404':
-                description: Movie was not found
         """
 
         db.session.delete(movie)
@@ -671,54 +630,10 @@ class MovieItem(Resource):
             status=204
         )
 
+    @swag_from("doc/movie/items/put.yml")
     def put(self, movie):
         """
         Modify existing movie
-        ---
-        description: Edit movie in the database
-        tags:
-            - movie
-        parameters:
-          - $ref: '#/components/parameters/movie'
-        requestBody:
-            description: JSON formatted data
-            content:
-                application/JSON:
-                    schema:
-                        $ref: '#/components/schemas/Movie'
-                    example:
-                        title: The Lord of the Rings The Fellowship of the Ring
-                        comments: Very good. I like.
-                        rating: 10
-                        writer: Fran Walsh, Philippa Boyens
-                        release_year: 2001
-                        genres: Fantasy
-                        actors:
-                            - first_name: Elijah
-                              last_name: Wood
-                            - first_name: Ian
-                              last_name: McKellen
-                        directors:
-                            - first_name: Peter
-                              last_name: Jackson
-                        streaming_services:
-                            - name: HBO Max
-        responses:
-            '204':
-                description: Movie modified successfully
-                headers:
-                    Location:
-                        description: URI of the movie modified
-                        schema:
-                            type: string
-            '400':
-                description: Bad request/Invalid JSON Schema.
-            '404':
-                description: Movie was not found.
-            '409':
-                description: Identical Movie exists.
-            '415':
-                description: Unsupported media type, JSON required.
         """
         #TODO TEST THIS METHOD
         try:
@@ -835,49 +750,7 @@ class MovieCollection(Resource):
 
     def post(self):
         """
-        Method to post a new movie to the db
-        ---
-        description: Post a new movie
-        tags:
-            - movie
-        requestBody:
-            description: JSON formatted data
-            content:
-                application/JSON:
-                    schema:
-                        $ref: '#/components/schemas/Movie'
-                    example:
-                        title: The Lord of the Rings The Fellowship of the Ring
-                        comments: Very good. I like.
-                        rating: 10
-                        writer: Fran Walsh, Philippa Boyens
-                        release_year: 2001
-                        genres: Fantasy
-                        actors:
-                            - first_name: Elijah
-                              last_name: Wood
-                            - first_name: Ian
-                              last_name: McKellen
-                        directors:
-                            - first_name: Peter
-                              last_name: Jackson
-                        streaming_services:
-                            - name: HBO Max
-        responses:
-            '201':
-                description: Movie added successfully
-                headers:
-                    Location:
-                        description: URI of the movie added
-                        schema:
-                            type: string
-            '400':
-                description: Bad request/Invalid JSON Schema.
-            '409':
-                description: Identical Movie exists.
-            '415':
-                description: Unsupported media type, JSON required.
-                        
+        Method to post a new movie to the db.
         """
         try:
             #DOC:If the request content type is not ``application/json``, this
@@ -1006,33 +879,6 @@ class ActorCollection(Resource):
     def post(self):
         """
         Add new actor to the database.
-        ---
-        description: Post new actor to the database
-        tags:
-            - actor
-        requestBody:
-            description: JSON formatted data
-            content:
-                application/JSON:
-                    schema:
-                        $ref: '#/components/schemas/Actor'
-                    example:
-                        fist_name: Scarlett
-                        last_name: Johansson
-        responses:
-            '201':
-                description: Actor added successfully
-                headers:
-                    Location:
-                        description: URI of the actor added
-                        schema:
-                            type: string
-            '400':
-                description: Bad request/Invalid JSON Schema.
-            '409':
-                description: Identical actor exists
-            '415':
-                description: Unsupported media type, JSON required.
         """
         try:
             #DOC:If the request content type is not ``application/json``, this
@@ -1063,49 +909,21 @@ class ActorCollection(Resource):
         return Response(status=201, headers={"Location": api.url_for(ActorItem, actorname=actor)})
 
 class ActorItem(Resource):
-    """Resource for getting and modifying existing actor."""    
+    """Resource for getting and modifying existing actor."""
+    @swag_from("doc/actor/actorname/delete.yml")
     def delete(self,actorname):
         """
         Method for deleting actor
-        ---
-        description: Delete actor by name
-        tags:
-            - actor
-        parameters:
-          - $ref: '#/components/parameters/actorname'
-        responses:
-            '204':
-                description: Deleted actor successfully
-            '404':
-                description: Actor was not found
         """
         db.session.delete(actorname)
         db.session.commit()
 
         return Response(status=204)
 
-
+    @swag_from("doc/actor/actorname/get.yml")
     def get(self,actorname):
         """
         Get actor by name
-        ---
-        description: Get actor by name
-        tags:
-            - actor
-        parameters:
-          - $ref: '#/components/parameters/actorname'
-        responses:
-            '200':
-                description: Got actor successfully
-                content:
-                    application/JSON:
-                        schema:
-                            $ref: '#/components/schemas/Actor'
-                        example:
-                            first_name: Emma
-                            last_name: Watson
-            '404':
-                description: Actor was not found
         """
         print(actorname)
         body = actorname.serialize()
@@ -1117,42 +935,12 @@ class ActorItem(Resource):
             )
         return response
 
+    @swag_from("doc/actor/actorname/put.yml")
     def put(self, actorname):
         #TODO TEST THIS METHOD
 
         """
         Edit existing actor
-        ---
-        description: Edit actor in the database
-        tags:
-            - actor
-        parameters:
-          - $ref: '#/components/parameters/actorname'
-        requestBody:
-            description: JSON formatted data
-            content:
-                application/JSON:
-                    schema:
-                        $ref: '#/components/schemas/Actor'
-                    example:
-                        fist_name: Scarlett
-                        last_name: Johansson
-        responses:
-            '204':
-                description: Actor modified successfully
-                headers:
-                    Location:
-                        description: URI of the actor modified
-                        schema:
-                            type: string
-            '400':
-                description: Bad request/Invalid JSON Schema.
-            '404':
-                description: Actor was not found
-            '409':
-                description: Identical actor exists
-            '415':
-                description: Unsupported media type, JSON required.
         """
         try:
             #DOC:If the request content type is not ``application/json``, this
@@ -1221,36 +1009,11 @@ class StreamingCollection(Resource):
             mimetype=MASON)
         return response
 
+    @swag_from("doc/streaming/post.yml")
     def post(self):
         """
         Add new streaming service to the database.
         Does not permit adding movies to the service right now.
-        ---
-        description: Post new streaming service to the database
-        tags:
-            - streaming
-        requestBody:
-            description: JSON formatted data
-            content:
-                application/JSON:
-                    schema:
-                        $ref: '#/components/schemas/StreamingService'
-                    example:
-                        name: Netflix
-        responses:
-            '201':
-                description: StreamingService added successfully
-                headers:
-                    Location:
-                        description: URI of the streaming service added
-                        schema:
-                            type: string
-            '400':
-                description: Bad request/Invalid JSON Schema.
-            '409':
-                description: Identical streaming service exists
-            '415':
-                description: Unsupported media type, JSON required.
         """
         if not request.json:
             raise UnsupportedMediaType(415, "UnsupportedMediaType, JSON document required.")
@@ -1282,33 +1045,10 @@ class StreamingCollection(Resource):
 
 class StreamingItem(Resource):
     """Resource for getting and modifying existing streaming service."""
+    @swag_from("doc/streaming/streamingservice/get.yml")
     def get(self, streamingservice):
         """
         Get a streaming service name and list of all titles in it.
-        ---
-        description: Get a streaming service name and list of all titles in it.
-        tags:
-            - streaming
-        parameters:
-        - $ref: '#/components/parameters/streamingservice'
-        responses:
-            '200':
-                description: Got movie details successfully
-                content:
-                    application/JSON:
-                        schema:
-                            $ref: '#/components/schemas/StreamingServiceShort'
-                        example:
-                            name: Netflix
-                            movies:
-                                - movie:
-                                    title: Batman Begins
-                                - movie:
-                                    title: The Dark Knight
-                                - movie:
-                                    title: The Dark Knight Rises
-            '404':
-                description: Streaming service not found
         """
         body = streamingservice.serialize()
         response = Response(
@@ -1319,38 +1059,11 @@ class StreamingItem(Resource):
             )
         return response
 
+    @swag_from("doc/streaming/streamingservice/put.yml")
     def put(self,streamingservice):
         #TODO: need to test/decide if we need to give all the movies when modifying the name.
         """
         Modify existing streaming service
-        ---
-        description: Modify streaming service in the database
-        tags:
-            - streaming
-        parameters:
-        - $ref: '#/components/parameters/streamingservice'
-        requestBody:
-            description: JSON formatted data
-            content:
-                application/JSON:
-                    schema:
-                        $ref: '#/components/schemas/StreamingService'
-                    example:
-                        name: Netflix
-        responses:
-            '204':
-                description: StreamingService modified successfully
-                headers:
-                    Location:
-                        description: URI of the streaming service added
-                        schema:
-                            type: string
-            '400':
-                description: Bad request/Invalid JSON Schema.
-            '409':
-                description: Identical streaming service exists
-            '415':
-                description: Unsupported media type, JSON required.
         """
         if not request.json:
             raise UnsupportedMediaType(415, "UnsupportedMediaType, JSON document required.")
