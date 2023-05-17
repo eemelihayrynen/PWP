@@ -1040,7 +1040,7 @@ class StreamingCollection(Resource):
 
         return Response(
             status=201,
-            headers={"Location": api.url_for("streaming", streamingservice=streaming_service.name)}
+            headers={"Location": api.url_for(StreamingCollection, streamingservicename=streaming_service)}
             )
 
 class StreamingItem(Resource):
