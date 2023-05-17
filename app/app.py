@@ -918,7 +918,6 @@ class ActorItem(Resource):
         """
         Get actor by name
         """
-        print(actorname)
         body = actorname.serialize()
         response = Response(
             json.dumps(body),
