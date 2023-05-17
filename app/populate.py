@@ -48,16 +48,16 @@ for i in data["movies"]:
 				break
 	except:
 		continue
-	print(i["movie_name"])
+	
 
 	actor1 = Actor(
 		first_name=i["actors_list"][0].split(" ")[0],
 		last_name=(str(i["actors_list"][0].split(" ")[1:])).replace("['","").replace("']","").replace("', '", " ")
 	)
-	print(actor1.last_name)
+	
 	db_actor = Actor.query.filter_by(first_name = actor1.first_name, last_name = actor1.last_name).first()
 	if db_actor is None:
-		print("Actor not in database")
+		pass
 	else:
 		actor1 = db_actor
 
@@ -68,7 +68,7 @@ for i in data["movies"]:
 
 	db_actor = Actor.query.filter_by(first_name = actor2.first_name, last_name = actor2.last_name).first()
 	if db_actor is None:
-		print("Actor not in database")
+		pass
 	else:
 		actor2 = db_actor
 	dir1 = Director(
@@ -77,14 +77,14 @@ for i in data["movies"]:
 	)
 	db_dir = Director.query.filter_by(first_name = dir1.first_name, last_name = dir1.last_name).first()
 	if db_dir is None:
-		print("Director not in database")
+		pass
 	else:
 		dir1 = db_dir
 	if ss1 == "":
 		ss1 = StreamingService(name="not streaming without rent or buy")
 	db_ss = StreamingService.query.filter_by(name = ss1.name).first()
 	if db_ss is None:
-		print("Streaming service not in database")
+		pass
 	else:
 		ss1 = db_ss
 	movie = Movie(
@@ -98,9 +98,9 @@ for i in data["movies"]:
 	)
 	db_movie = Movie.query.filter_by(title=movie.title, release_year=movie.release_year ).first()
 	if db_movie is None:
-		print("Adding new movie")
+		print("Adding new movie: " + movie.title)
 		db.session.add(movie)
 		db.session.commit()
 	else:
-		print("already in database")
+		print("Already in database: " + movie.title)
 
