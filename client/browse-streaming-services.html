@@ -41,13 +41,14 @@
   const container = document.getElementById('dataContainer');
 
   function displayMovie(movie){
-    console.log(movie);
+    //console.log(movie);
     return `
     <a href="search-movies.html?url=${movie["@controls"]["self"]["href"]}" class="list-group-item list-group-item-action">${movie.title}</a>
     `;
   }
 
   function getService(url){
+    console.log(url);
     fetch(url)
     .then(response => response.json())
     .then(data => {
@@ -94,13 +95,12 @@
 </script>
 <script>
   const params = new URLSearchParams(window.location.search)
-  console.log(params.get('url'))
   name = params.get('name');
   urli = params.get('url');
   if(urli != null){
     getService("http://127.0.0.1:5000/" + urli);
   }
-  else if(name != null){
+  else if (name != null && name != 'null'){
     urli = "http://127.0.0.1:5000/streaming/" + name + "/";
     getService(urli);
   }
