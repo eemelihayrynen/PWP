@@ -1,18 +1,30 @@
 # Meeting notes from discussion after deadline 2
 
 - add restrictions to database tables where applicable
+    - unique constraints implemented and some required fields added 
 - could use enumerations in streaming services instead of a string
+    - we decided to stay with strings 
 - make diagram like in deadline 1 for the completed database
+    - done 
 - remove old extra line in movie database table, showing the relations more easily
     - done
 - consider many-to-many relations with actors and director and movies
+    - relationships are chagned to many-to-many and association tables created 
 - relations not defined in sqlalqchemy in the python file, see excercise 1
+    - added
 - define what happens when entries are deleted from the database (cascade delete, set null, .etc)
 - add mention of using sqlalqchemy and sqlite both in the readme and deadline 2 wiki pages
+    - done
 - add requirements.txt to the repo, delete the virtual environment
+    - done
 - explain how to fill the database with the included script
+    - done
 - expand population.py with testing of retreiving the data to see that it is correct
+    - at least partially one 
 - some helper program can be used to browse sqlite databases
+    - DB Browser was used when needed 
 - 256 char for comments is too low (do we event want comments?)
+    - we decided not have comments in the database
 - add notes of the meetings to the repo
+    - added these notes
 - improve the structure of the project in the repo by looking tips from the excercise 2
