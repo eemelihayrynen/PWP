@@ -3,6 +3,7 @@ import json
 from app import db
 from app import app
 from app import Movie, Actor, Director, StreamingService
+from sqlalchemy.exc import IntegrityError
 ctx = app.app_context()
 ctx.push()
 db.create_all()
@@ -47,24 +48,45 @@ for i in data["movies"]:
 				break
 	except:
 		continue
-	print(i["movie_name"])
+	
 
 	actor1 = Actor(
 		first_name=i["actors_list"][0].split(" ")[0],
-		last_name=str(i["actors_list"][0].split(" ")[1:])
+		last_name=(str(i["actors_list"][0].split(" ")[1:])).replace("['","").replace("']","").replace("', '", " ").replace('["',"").replace('"]',"")
 	)
+	
+	db_actor = Actor.query.filter_by(first_name = actor1.first_name, last_name = actor1.last_name).first()
+	if db_actor is None:
+		pass
+	else:
+		actor1 = db_actor
 
 	actor2 = Actor(
 		first_name=i["actors_list"][1].split(" ")[0],
-		last_name=str(i["actors_list"][1].split(" ")[1:])
+		last_name=(str(i["actors_list"][1].split(" ")[1:]).replace("['","").replace("']","").replace("', '", " ").replace('["',"").replace('"]',""))
 	)
+
+	db_actor = Actor.query.filter_by(first_name = actor2.first_name, last_name = actor2.last_name).first()
+	if db_actor is None:
+		pass
+	else:
+		actor2 = db_actor
 	dir1 = Director(
 		first_name=i["director_name"].split(" ")[0],
-		last_name=str(i["director_name"].split(" ")[1:])
+		last_name=(str(i["director_name"].split(" ")[1:]).replace("['","").replace("']","").replace("', '", " ")).replace('["',"").replace('"]',"")
 	)
+	db_dir = Director.query.filter_by(first_name = dir1.first_name, last_name = dir1.last_name).first()
+	if db_dir is None:
+		pass
+	else:
+		dir1 = db_dir
 	if ss1 == "":
 		ss1 = StreamingService(name="not streaming without rent or buy")
-
+	db_ss = StreamingService.query.filter_by(name = ss1.name).first()
+	if db_ss is None:
+		pass
+	else:
+		ss1 = db_ss
 	movie = Movie(
 		title=i["movie_name"],
 		directors=[dir1],
@@ -74,5 +96,11 @@ for i in data["movies"]:
 		release_year=i["movie_year"],
 		genres=i["genre"][0]
 	)
-	db.session.add(movie)
-	db.session.commit()
+	db_movie = Movie.query.filter_by(title=movie.title, release_year=movie.release_year ).first()
+	if db_movie is None:
+		print("Adding new movie: " + movie.title)
+		db.session.add(movie)
+		db.session.commit()
+	else:
+		print("Already in database: " + movie.title)
+

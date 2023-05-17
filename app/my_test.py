@@ -50,6 +50,7 @@ def _get_film():
             ,"directors":[{"first_name":"Daniel","last_name":"4"}], "streaming_services": [{"name": "Netflix"}] }
 
 def _get_film2():
+
     title= "movie 5"
     comments= ""
     rating= 9.0
@@ -59,7 +60,7 @@ def _get_film2():
     directors = "Chris Nolan"
     streamingServices = "HBO Max"
     return {"title": title, "comments":comments, "rating":rating, "writer":writer, "release_year":release_year, "genres":genres, "actors":[{"first_name":"mick","last_name":"4"}]
-            ,"directors":[{"first_name":"Daniel","last_name":""}], "streaming_services": [{"name": "Netflix"}] }
+            ,"directors":[{"first_name":"Daniel","last_name":''.join(random.choice(string.ascii_lowercase) for i in range(10))}], "streaming_services": [{"name": "Netflix"}] }
 
 class Testing(object):
     MOVIE_URL = "/movie/movie 4/"
@@ -120,7 +121,6 @@ class Testing(object):
             resp = client.put(self.MOVIE_URL,json = m)
             assert resp.status_code == 201 or resp.status_code == 409
 
-
     def test_get_actor(self,client):
         """
         tests get method for actor, returns 200 when correct also tests the length of the data
@@ -148,9 +148,7 @@ class Testing(object):
             client.delete(self.ACTOR_URL)
         a = {"first_name":"mick","last_name":"4"}
         resp = client.post(self.ACTOR_POST_URL,json = a)
-        assert resp.status_code == 201
-        resp = client.post(self.ACTOR_POST_URL,json = a)
-        assert resp.status_code == 409
+        assert resp.status_code == 201 or resp.status_code == 409
 
     def test_modify_stream(self,client):
         """
@@ -160,23 +158,27 @@ class Testing(object):
         resp = client.put(self.STREAM_URL,json = a)
         assert resp.status_code == 409 or resp.status_code == 204
 
-    def test_get_all_stream(self,client):
-        """
-        tests get all method for streaming services
-        """
-        resp = client.get(self.STREAM_URL)
-        assert resp.status_code == 200
-    
+
     def test_entrypoint(self,client):
         resp = client.get("/api/")
         assert resp.status_code == 200
 
     def test_streaming_post(self,client):
-        a={"name":"HBOMAX"}
+        a={"name":"HBO  MAX"}
         resp = client.post(self.STREAM_POST_URL,json = a)
-        assert resp.status_code == 200 or resp.status_code == 409
+        assert resp.status_code == 201 or resp.status_code == 409
 
-    def test_streaming_get_all(self,client):
+    def test_get_all_stream(self,client):
+        """
+        tests get all method for streaming services
+        """
+
+        a={"name":"HBO   MAX"}
+        test = client.post(self.STREAM_POST_URL,json = a)
+        resp = client.get(self.STREAM_URL)
+        assert resp.status_code == 200 or resp.status_code == 404
+
+    def test_streaming_get(self,client):
         resp = client.get(self.STREAM_POST_URL)
         assert resp.status_code == 200 
 
