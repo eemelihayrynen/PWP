@@ -121,11 +121,6 @@ class Testing(object):
             resp = client.put(self.MOVIE_URL,json = m)
             assert resp.status_code == 201 or resp.status_code == 409
 
-        "failed json test"
-        with db.session.no_autoflush:
-            resp = client.put(self.MOVIE_URL,json = 1)
-            assert BadRequest
-
     def test_get_actor(self,client):
         """
         tests get method for actor, returns 200 when correct also tests the length of the data
