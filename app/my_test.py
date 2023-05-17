@@ -72,6 +72,7 @@ class Testing(object):
     ACTOR_URL2 = "/actor/mick 5/"
     STREAM_POST_URL = "/streaming/"
     STREAM_URL = "/streaming/Netflix/"
+    STREAM_URL_GET = "streaming/HBO  MAX/"
 
     def test_get_film(self,client):
         """
@@ -170,7 +171,7 @@ class Testing(object):
 
 
     def test_streaming_get(self,client):
-        resp = client.get(self.STREAM_URL)
+        resp = client.get(self.STREAM_URL_GET)
         assert resp.status_code == 200 
 
     def test_check_streamer(self,client):
