@@ -48,7 +48,7 @@ The client composes of static html files.
 To use the client, open any of the html files in your web browser.
 
 ## Testing the API
-
+Make sure to populate the database before testing.
 To run the functional tests, run:
 
     pytest my_test.py
