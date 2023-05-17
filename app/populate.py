@@ -52,7 +52,7 @@ for i in data["movies"]:
 
 	actor1 = Actor(
 		first_name=i["actors_list"][0].split(" ")[0],
-		last_name=(str(i["actors_list"][0].split(" ")[1:])).replace("['","").replace("']","").replace("', '", " ")
+		last_name=(str(i["actors_list"][0].split(" ")[1:])).replace("['","").replace("']","").replace("', '", " ").replace('["',"").replace('"]',"")
 	)
 	
 	db_actor = Actor.query.filter_by(first_name = actor1.first_name, last_name = actor1.last_name).first()
@@ -63,7 +63,7 @@ for i in data["movies"]:
 
 	actor2 = Actor(
 		first_name=i["actors_list"][1].split(" ")[0],
-		last_name=(str(i["actors_list"][1].split(" ")[1:]).replace("['","").replace("']","").replace("', '", " "))
+		last_name=(str(i["actors_list"][1].split(" ")[1:]).replace("['","").replace("']","").replace("', '", " ").replace('["',"").replace('"]',""))
 	)
 
 	db_actor = Actor.query.filter_by(first_name = actor2.first_name, last_name = actor2.last_name).first()
@@ -73,7 +73,7 @@ for i in data["movies"]:
 		actor2 = db_actor
 	dir1 = Director(
 		first_name=i["director_name"].split(" ")[0],
-		last_name=(str(i["director_name"].split(" ")[1:]).replace("['","").replace("']","").replace("', '", " "))
+		last_name=(str(i["director_name"].split(" ")[1:]).replace("['","").replace("']","").replace("', '", " ")).replace('["',"").replace('"]',"")
 	)
 	db_dir = Director.query.filter_by(first_name = dir1.first_name, last_name = dir1.last_name).first()
 	if db_dir is None:
