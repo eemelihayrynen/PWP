@@ -510,26 +510,26 @@ class MovieMetaBuilder(MasonBuilder):
     def add_control_delete_movie(self, movie):
         self.add_control_delete(
             "Delete this movie",
-            url_for("movie", movie=movie.title),
+            api.url_for(MovieItem, movie=movie),
         )
 
     def add_control_delete_actor(self, actor):
         self.add_control_delete(
             "Delete this actor",
-            url_for("actor", actor = actor.first_name + " " + actor.last_name),
+            api.url_for(ActorItem, actorname=actor),
         )
 
     def add_control_edit_movie(self, movie):
         self.add_control_put(
             "Edit this movie",
-            url_for("movie", movie = movie.title),
+            api.url_for(MovieItem, movie=movie),
             Movie.json_schema()
         )
 
     def add_control_edit_actor(self, actor):
         self.add_control_put(
             "Edit this artist",
-            url_for("actor", actor = actor.first_name + " " + actor.last_name),
+            api.url_for(ActorItem, actorname=actor),
             Actor.json_schema()
         )
 
