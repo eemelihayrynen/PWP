@@ -12,7 +12,7 @@ DOC_TEMPLATE = {
                     example: {}"""
 }
 
-resp_json = requests.get(SERVER_ADDR + "/streaming/").json()
+resp_json = requests.get(SERVER_ADDR + "/streaming/HBO Max/").json()
 #DOC_TEMPLATE["responses"]["200"]["content"]["application/vnd.mason+json"]["example"] = resp_json
-with open(os.path.join(DOC_ROOT, "streaming/get.yml"), "w") as target:
+with open(os.path.join(DOC_ROOT, "temp.yml"), "w") as target:
     target.write(yaml.dump(resp_json, default_flow_style=False))

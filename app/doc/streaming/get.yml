@@ -6,6 +6,8 @@ responses:
   '200':
     content:
       application/vnd.mason+json:
+        schema:
+          $ref: '#/components/schemas/StreamingServiceShort'
         example:
           '@controls':
             mumeta:add-streamingservice:
@@ -23,7 +25,7 @@ responses:
                 type: object
               title: Add a streamingservice
             mumeta:streaminservices-all:
-              href: /streaming/?sortby={sortby}
+              href: /streaming/
               isHrefTemplate: true
               title: All streamingservices
             self:
@@ -48,12 +50,12 @@ responses:
                   type: object
                 title: Add a streamingservice
               self:
-                href: /streaming/Netflix/
+                href: /streaming/Amazon Prime Video/
             '@namespaces':
               mumeta:
                 name: /moviemeta/link-relations#
             id: 1
-            name: Netflix
+            name: Amazon Prime Video
           - '@controls':
               mumeta:add-streamingservice:
                 encoding: json
@@ -70,12 +72,12 @@ responses:
                   type: object
                 title: Add a streamingservice
               self:
-                href: /streaming/Disney+/
+                href: /streaming/Netflix/
             '@namespaces':
               mumeta:
                 name: /moviemeta/link-relations#
             id: 2
-            name: Disney+
+            name: Netflix
           - '@controls':
               mumeta:add-streamingservice:
                 encoding: json
@@ -98,25 +100,3 @@ responses:
                 name: /moviemeta/link-relations#
             id: 3
             name: HBO Max
-          - '@controls':
-              mumeta:add-streamingservice:
-                encoding: json
-                href: /streaming/
-                method: POST
-                schema:
-                  $id: /schemas/streaming_services
-                  properties:
-                    name:
-                      description: Name of the service
-                      type: string
-                  required:
-                  - name
-                  type: object
-                title: Add a streamingservice
-              self:
-                href: /streaming/Sky Showtime/
-            '@namespaces':
-              mumeta:
-                name: /moviemeta/link-relations#
-            id: 4
-            name: Sky Showtime

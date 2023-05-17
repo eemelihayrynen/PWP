@@ -8,25 +8,218 @@ responses:
   '200':
     description: Got movie details successfully
     content:
-      application/JSON:
+      application/vnd.mason+json:
         schema:
           $ref: '#/components/schemas/Movie'
         example:
-          title: The Lord of the Rings The Fellowship of the Ring
-          comments: Very good. I like.
-          rating: 10
-          writer: 'Fran Walsh, Philippa Boyens'
-          release_year: 2001
-          genres: Fantasy
+          '@controls':
+            edit:
+              encoding: json
+              href: /movie/The Dark Knight/
+              method: PUT
+              schema:
+                properties:
+                  actors:
+                    description: List of actors
+                    items:
+                      $id: /schemas/actor
+                      properties:
+                        first_name:
+                          description: First name
+                          type: string
+                        last_name:
+                          description: Last name
+                          type: string
+                      required:
+                      - first_name
+                      - last_name
+                      type: object
+                    type: array
+                  comments:
+                    description: Comments in one string
+                    type: string
+                  directors:
+                    description: List of directors
+                    items:
+                      $id: /schemas/director
+                      properties:
+                        first_name:
+                          description: First name
+                          type: string
+                        last_name:
+                          description: Last name
+                          type: string
+                      required:
+                      - first_name
+                      - last_name
+                      type: object
+                    type: array
+                  genres:
+                    description: Genres in one string
+                    type: string
+                  rating:
+                    description: Rating from imdb
+                    type: number
+                  release_year:
+                    description: Year of the original release
+                    type: integer
+                  streaming_services:
+                    description: List of streaming services
+                    items:
+                      $id: /schemas/streaming_services
+                      properties:
+                        name:
+                          description: Name of the service
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  title:
+                    description: Name of the movie
+                    type: string
+                  writer:
+                    description: Writer
+                    type: string
+                required:
+                - title
+                type: object
+              title: Edit this movie
+            mumeta:delete:
+              href: /movie/The Dark Knight/
+              method: DELETE
+              title: Delete this movie
+            mumeta:poster:
+              href: no-image.png
+              method: GET
+              title: Get movie poster
+            self:
+              href: /movie/The Dark Knight/
+          '@namespaces':
+            mumeta:
+              name: /moviemeta/link-relations#
           actors:
-            - first_name: Elijah
-              last_name: Wood
-            - first_name: Ian
-              last_name: McKellen
+          - '@controls':
+              collection:
+                href: /actor/
+              edit:
+                encoding: json
+                href: /actor/Christian Bale/
+                method: PUT
+                schema:
+                  $id: /schemas/actor
+                  properties:
+                    first_name:
+                      description: First name
+                      type: string
+                    last_name:
+                      description: Last name
+                      type: string
+                  required:
+                  - first_name
+                  - last_name
+                  type: object
+                title: Edit this artist
+              mumeta:delete:
+                href: /actor/Christian Bale/
+                method: DELETE
+                title: Delete this actor
+              profile:
+                href: /actor/
+              self:
+                href: /actor/Christian Bale/
+            '@namespaces':
+              mumeta:
+                name: /moviemeta/link-relations#
+            first_name: Christian
+            last_name: Bale
+          - '@controls':
+              collection:
+                href: /actor/
+              edit:
+                encoding: json
+                href: /actor/Heath Ledger/
+                method: PUT
+                schema:
+                  $id: /schemas/actor
+                  properties:
+                    first_name:
+                      description: First name
+                      type: string
+                    last_name:
+                      description: Last name
+                      type: string
+                  required:
+                  - first_name
+                  - last_name
+                  type: object
+                title: Edit this artist
+              mumeta:delete:
+                href: /actor/Heath Ledger/
+                method: DELETE
+                title: Delete this actor
+              profile:
+                href: /actor/
+              self:
+                href: /actor/Heath Ledger/
+            '@namespaces':
+              mumeta:
+                name: /moviemeta/link-relations#
+            first_name: Heath
+            last_name: Ledger
           directors:
-            - first_name: Peter
-              last_name: Jackson
+          - first_name: Christopher
+            last_name: Nolan
+          genres: Action
+          rating: 9.0
+          release_year: 2008
           streaming_services:
-            - name: HBO Max
+          - '@controls':
+              mumeta:add-streamingservice:
+                encoding: json
+                href: /streaming/
+                method: POST
+                schema:
+                  $id: /schemas/streaming_services
+                  properties:
+                    name:
+                      description: Name of the service
+                      type: string
+                  required:
+                  - name
+                  type: object
+                title: Add a streamingservice
+              self:
+                href: /streaming/HBO Max/
+            '@namespaces':
+              mumeta:
+                name: /moviemeta/link-relations#
+            id: 3
+            name: HBO Max
+          - '@controls':
+              mumeta:add-streamingservice:
+                encoding: json
+                href: /streaming/
+                method: POST
+                schema:
+                  $id: /schemas/streaming_services
+                  properties:
+                    name:
+                      description: Name of the service
+                      type: string
+                  required:
+                  - name
+                  type: object
+                title: Add a streamingservice
+              self:
+                href: /streaming/HBO Max/
+            '@namespaces':
+              mumeta:
+                name: /moviemeta/link-relations#
+            id: 3
+            name: HBO Max
+          title: The Dark Knight
+          writer: Jonathan Nolan
+
   '404':
     description: Movie was not found from server

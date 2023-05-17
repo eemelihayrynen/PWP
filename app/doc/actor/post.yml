@@ -9,7 +9,7 @@ requestBody:
       schema:
         $ref: '#/components/schemas/Actor'
       example:
-        fist_name: Scarlett
+        first_name: Scarlett
         last_name: Johansson
 responses:
   '201':
