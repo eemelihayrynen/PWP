@@ -158,12 +158,6 @@ class Testing(object):
         resp = client.put(self.STREAM_URL,json = a)
         assert resp.status_code == 409 or resp.status_code == 204
 
-    def test_get_all_stream(self,client):
-        """
-        tests get all method for streaming services
-        """
-        resp = client.get(self.STREAM_URL)
-        assert resp.status_code == 200
 
     def test_entrypoint(self,client):
         resp = client.get("/api/")
@@ -173,8 +167,15 @@ class Testing(object):
         a={"name":"HBO  MAX"}
         resp = client.post(self.STREAM_POST_URL,json = a)
         assert resp.status_code == 201 or resp.status_code == 409
+        
+    def test_get_all_stream(self,client):
+        """
+        tests get all method for streaming services
+        """
+        resp = client.get(self.STREAM_URL)
+        assert resp.status_code == 200
 
-    def test_streaming_get_all(self,client):
+    def test_streaming_get(self,client):
         resp = client.get(self.STREAM_POST_URL)
         assert resp.status_code == 200 
 
