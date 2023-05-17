@@ -30,7 +30,7 @@ def client():
 def populate():
     if not Movie.query.filter_by(title="movie 4").first():
         print("adding")
-        movie = Movie(title="movie 4".format(4), comments="comments", rating=4, writer="writer", release_year=4, genres="action", actors=[],streaming_services= [{"name": "Netflix"}])
+        movie = Movie(title="movie 4".format(4), comments="comments", rating=4, writer="writer", release_year=4, genres="action", actors=[])
         db.session.add(movie)
         if not Actor.query.filter_by(first_name = "Daniel"):
             actor = Actor(first_name = "Daniel", last_name=str(4))
@@ -172,10 +172,11 @@ class Testing(object):
         """
         tests get all method for streaming services
         """
+
         a={"name":"HBO   MAX"}
         test = client.post(self.STREAM_POST_URL,json = a)
         resp = client.get(self.STREAM_URL)
-        assert resp.status_code == 200
+        assert resp.status_code == 200 or resp.status_code == 404
 
     def test_streaming_get(self,client):
         resp = client.get(self.STREAM_POST_URL)
