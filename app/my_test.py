@@ -170,7 +170,7 @@ class Testing(object):
 
 
     def test_streaming_get(self,client):
-        resp = client.get(self.STREAM_POST_URL)
+        resp = client.get(self.STREAM_URL)
         assert resp.status_code == 200 
 
     def test_check_streamer(self,client):
@@ -183,10 +183,10 @@ class Testing(object):
         a = {"first_name":"jack","last_name":''.join(random.choice(string.ascii_lowercase) for i in range(9))}
         resp = client.put(self.ACTOR_URL,json = a)
         assert resp.status_code == 409 or resp.status_code == 204
-        
+
     def test_get_all_stream(self,client):
         """
         tests get all method for streaming services
         """
-        resp = client.get(self.STREAM_URL)
+        resp = client.get(self.STREAM_POST_URL)
         assert resp.status_code == 200
