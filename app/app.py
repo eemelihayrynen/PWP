@@ -5,7 +5,7 @@ https://lovelace.oulu.fi/ohjelmoitava-web/ohjelmoitava-web/
 https://github.com/enkwolf/pwp-course-sensorhub-api-example
 '''
 import json
-from flask import Flask, Response, request, jsonify, url_for
+from flask import Flask, Response, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
@@ -27,10 +27,6 @@ tmdb.language = 'en'
 tmdb_movies = tmdbv3api.Movie()
 
 #TODO: divide code to separate files
-
-#TODO: there must be corresponding data in the database to
-# make the examples in documentation work.
-
 #TODO: delete operations should be defined also on database model level,
 #  e.g. cascade, set null...
 
@@ -149,7 +145,7 @@ class Movie(db.Model):
 
     def deserialize(self, doc):
         '''De-serialize function for Movie resource'''
-        #TODO a way to desearialize actors, directors, streamingservices
+        #WIP: a way to desearialize actors, directors, streamingservices
         #
         # for a in doc["actors"]:
         #   a.deserialize()
@@ -182,7 +178,6 @@ class Movie(db.Model):
         schema = {
             "type": "object",
             "required": ["title"]
-            #TODO: decide if actors, etc. are required and match to db definitions
         }
         props = schema["properties"] = {}
         props["title"] = {
@@ -395,13 +390,13 @@ class MasonBuilder(dict):
             "@messages": [details],
         }
 
-    def add_namespace(self, ns, uri):
+    def add_namespace(self, name_space, uri):
 
 
         if "@namespaces" not in self:
             self["@namespaces"] = {}
 
-        self["@namespaces"][ns] = {
+        self["@namespaces"][name_space] = {
             "name": uri
         }
 
@@ -458,6 +453,7 @@ class MasonBuilder(dict):
         )
 
 class MovieMetaBuilder(MasonBuilder):
+    '''Helper Class for hypermedia controls'''
     def add_control_movies_all(self):
         self.add_control(
             "mumeta:movies-all",
@@ -724,7 +720,6 @@ class MovieItem(Resource):
 
 class MovieCollection(Resource):
     """Resource for getting all movies or adding a new."""
-    #TODO: finish this missing get-method to get all movies
     def get(self):
         """
         Get all movies from the database
@@ -770,8 +765,6 @@ class MovieCollection(Resource):
         except ValidationError as v_e:
             raise BadRequest(description=str(v_e)) from v_e
 
-
-        #TODO: create deserialize method to Movie class to simplify this
         title = str(request.json["title"])
         comments = str(request.json["comments"])
         rating = float(request.json["rating"])
@@ -985,8 +978,6 @@ class StreamingConverter(BaseConverter):
 
 class StreamingCollection(Resource):
     """Resource for creating new streaming service or getting all"""
-    #TODO: finish this missing get-method to get all streaming services
-    #TODO: documentation
     @swag_from("doc/streaming/get.yml")
     def get(self):
         """
@@ -1040,7 +1031,8 @@ class StreamingCollection(Resource):
 
         return Response(
             status=201,
-            headers={"Location": api.url_for(StreamingCollection, streamingservicename=streaming_service)}
+            headers={"Location": api.url_for(StreamingCollection,
+                                             streamingservicename=streaming_service)}
             )
 
 class StreamingItem(Resource):
@@ -1088,12 +1080,19 @@ class StreamingItem(Resource):
 @app.route("/api/")
 def index():
     '''Entypoint path for the API'''
-    links = [{'rel': 'MovieItem', 'href': "/movie/<movie:movie>/", 'methods': ['GET', 'PUT', 'DELETE']},
+    links = [{'rel': 'MovieItem',
+              'href': "/movie/<movie:movie>/",
+              'methods': ['GET', 'PUT', 'DELETE']},
              {'rel': 'MovieCollection', 'href': "/movie/", 'methods': ['GET', 'POST']},
              {'rel': 'ActorCollection', 'href': "/actor/", 'methods': ['POST']},
-             {'rel': 'ActorItem', 'href': "/actor/<actorname:actorname>/", 'methods': ['GET', 'PUT', 'DELETE']},
+             {'rel': 'ActorItem',
+              'href': "/actor/<actorname:actorname>/",
+              'methods': ['GET', 'PUT', 'DELETE']},
              {'rel': 'StreamingCollection', 'href': "/streaming/", 'methods': ['GET', 'POST']},
-             {'rel': 'StreamingItem', 'href': "/streaming/<streamingservice:streamingservice>/", 'methods': ['GET', 'PUT']}]
+             {'rel': 'StreamingItem',
+              'href': "/streaming/<streamingservice:streamingservice>/",
+              'methods': ['GET', 'PUT']}
+              ]
     body = {}
     body["links"] = links
     response = Response(
