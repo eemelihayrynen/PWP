@@ -9,11 +9,11 @@ requestBody:
       schema:
         $ref: '#/components/schemas/Movie'
       example:
-        title: The Lord of the Rings The Fellowship of the Ring
-        rating: 10
+        title: 'The Lord of the Rings: The Fellowship of the Ring'
+        rating: 9.0
         writer: 'Fran Walsh, Philippa Boyens'
         release_year: 2001
-        genres: Fantasy
+        genres: 'Action, Adventure, Drama'
         actors:
           - first_name: Elijah
             last_name: Wood

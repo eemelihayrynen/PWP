@@ -11,8 +11,8 @@ requestBody:
       schema:
         $ref: '#/components/schemas/Actor'
       example:
-        first_name: Scarlett
-        last_name: Johansson
+        first_name: Arnold
+        last_name: Schwarzenegger
 responses:
   '204':
     description: Actor modified successfully
