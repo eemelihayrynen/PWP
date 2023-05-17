@@ -468,14 +468,14 @@ class MovieMetaBuilder(MasonBuilder):
     def add_control_actors_all(self):
         self.add_control(
             "mumeta:actors-all",
-            url_for("albums") + "?sortby={sortby}",
+            url_for("actor"),
             title="All actors",
             isHrefTemplate=True,
         )
     def add_control_streamingservices_all(self):
         self.add_control(
             "mumeta:streaminservices-all",
-            url_for("streaming") + "?sortby={sortby}",
+            url_for("streaming"),
             title="All streamingservices",
             isHrefTemplate=True,
         )
@@ -493,8 +493,8 @@ class MovieMetaBuilder(MasonBuilder):
 
     def add_control_add_actor(self):
         self.add_control_post(
-            "mumeta:add-artist",
-            "Add a new artist",
+            "mumeta:add-actor",
+            "Add a new actor",
             url_for("actor"),
             Actor.json_schema()
         )
@@ -521,7 +521,7 @@ class MovieMetaBuilder(MasonBuilder):
 
     def add_control_edit_movie(self, movie):
         self.add_control_put(
-            "Edit this moviee",
+            "Edit this movie",
             url_for("movie", movie = movie.title),
             Movie.json_schema()
         )
