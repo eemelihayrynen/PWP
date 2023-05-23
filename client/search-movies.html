@@ -15,6 +15,7 @@
         <li class="nav-item"> <a class="nav-link active" aria-current="page" href="search-movies.html">Search movies</a> </li>
         <li class="nav-item"> <a class="nav-link" href="browse-movies.html">Browse movies</a> </li>
         <li class="nav-item"> <a class="nav-link" href="browse-streaming-services.html">Browse streaming services</a> </li>
+        <li class="nav-item"> <a class="nav-link" href="add-edit-movie.html">Add & Edit</a> </li>
       </ul>
     </div>
   </div>
@@ -39,6 +40,7 @@
   const button = document.getElementById('searchButton');
   const container = document.getElementById('dataContainer');
   const input_text = document.getElementById('floatingInput').value
+  const deleteButton = document.getElementById('deleteButton');
 
   function displaySSs(service) {
     return`
@@ -78,7 +80,9 @@
         <h5>Actors:</h5>
         ${data.actors.map(displayActors).join('')}
       </div>
-    
+      <div class="col">
+      <button type="button" style="background-color:red; border-color:red" class="btn btn-primary" id="deleteButton">Delete this movie</button>
+    </div>
     </div>
     `;
   }
