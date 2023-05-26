@@ -56,7 +56,7 @@
         console.log("edit")
         editMovie();
       });
-      deleteButton.addEventListener('click', () => {
+  deleteButton.addEventListener('click', () => {
         console.log("delete")
         deleteMovie();
       });
@@ -161,6 +161,21 @@
         </div>
       </div>
     `
+    const doneButton = document.getElementById('Done');
+    const title = document.getElementById('titleInput').value
+    const comments = "";
+    const rating = document.getElementById('ratingInput').value
+    const writer = document.getElementById('writerInput').value
+    const releaseYear = document.getElementById('releaseYearInput').value
+    const genre = document.getElementById('genreInput').value
+    const actors = document.getElementById('actorInput').value
+    const directors = document.getElementById('directorInput').value
+    const streaming = document.getElementById('streamingInput').value
+    //TODO: convert these to correct json
+    doneButton.addEventListener('click', () => {
+        console.log("send put request")
+        //TODO: make the request with fetch
+    });
   }
 
   function deleteMovie() {
