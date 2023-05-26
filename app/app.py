@@ -623,7 +623,9 @@ class MovieItem(Resource):
         db.session.delete(movie)
         db.session.commit()
         return Response(
-            status=204
+            status=204,
+            headers={'Access-Control-Allow-Origin': '*',
+                     "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE"}
         )
 
     @swag_from("doc/movie/items/put.yml")
@@ -715,8 +717,16 @@ class MovieItem(Resource):
             raise Conflict(description="Identical movie already exists.") from i_e
         return Response(
             status=201,
-            headers={"Location": api.url_for(MovieItem, movie=movie)}
+            headers={"Location": api.url_for(MovieItem, movie=movie),
+                     'Access-Control-Allow-Origin': '*'}
         )
+
+    def options(self, movie):
+        '''Hack to evade CORS policy on preflight request when client is deployed locally.'''
+        return Response(
+            headers={"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE",
+                     'Access-Control-Allow-Origin': '*'}
+            )
 
 class MovieCollection(Resource):
     """Resource for getting all movies or adding a new."""
@@ -766,7 +776,7 @@ class MovieCollection(Resource):
             raise BadRequest(description=str(v_e)) from v_e
 
         title = str(request.json["title"])
-        comments = str(request.json["comments"])
+        #comments = str(request.json["comments"])
         rating = float(request.json["rating"])
         writer = str(request.json["writer"])
         release_year = int(request.json["release_year"])
@@ -777,7 +787,7 @@ class MovieCollection(Resource):
 
         movie = Movie(
             title=title,
-            comments=comments,
+            #comments=comments,
             rating=rating,
             writer=writer,
             release_year=release_year,
