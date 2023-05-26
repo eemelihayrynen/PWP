@@ -78,6 +78,18 @@
     <p>${actor.first_name} ${actor.last_name}</p>
     `
   }
+  function returnSSs(service) {
+    return service.name;
+    
+  }
+  function returnDirectors(director) {
+    return director.first_name + " " + director.last_name;
+
+  }
+  function returnActors(actor) {
+    //console.log(actor["@controls"].self.href);
+    return actor.first_name + " " + actor.last_name;
+  }
 
   function displayMovie(data){
     container.innerHTML = `
@@ -106,7 +118,49 @@
   }
 
   function editMovie() {
-
+    buttons.style.display = "none";
+    container.innerHTML = `
+    <h3>Fill changes:</h3>
+      <div class="row">
+        <div class="col">
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="titleInput" placeholder="Movie title" value="${moviedata.title}">
+            <label for="floatingInput">Movie title</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="ratingInput" placeholder="Rating" value="${moviedata.rating}">
+            <label for="floatingInput">Rating</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="writerInput" placeholder="Writer" value="${moviedata.writer}">
+            <label for="floatingInput">Writer</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="releaseYearInput" placeholder="Release year" value="${moviedata.release_year}">
+            <label for="floatingInput">Release year</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="genreInput" placeholder="Genre(s)" value="${moviedata.genres}">
+            <label for="floatingInput">Genre(s)</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="actorInput" placeholder="Actor(s)" value="${moviedata.actors.map(returnActors).join(', ')}">
+            <label for="floatingInput">Actor(s)</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="directorInput" placeholder="Director(s)" value="${moviedata.directors.map(returnDirectors).join(', ')}">
+            <label for="floatingInput">Director(s)</label>
+          </div>
+          <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="streamingInput" placeholder="Streaming service(s)" value="${moviedata.streaming_services.map(returnSSs).join(', ')}">
+            <label for="floatingInput">Streaming service(s)</label>
+          </div>
+        </div>
+        <div>
+          <button type="button" class="btn btn-primary" id="Done">Save</button>
+        </div>
+      </div>
+    `
   }
 
   function deleteMovie() {
