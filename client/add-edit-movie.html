@@ -97,7 +97,59 @@
     <p>${actor.first_name} ${actor.last_name}</p>
     `
   }
+  function postMovie(url, movieData) {
+    
+    url = "http://127.0.0.1:5000/movie/";
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(movieData)
+    })
+    .then(response => {
+      if (response.ok) {
+        console.log("Movie successfully posted");
+        
+      } else {
+        console.log("Failed to post movie");
+        
+      }
+    })
+    .catch(error => {
+      console.log("Error occurred while posting movie:", error);
+      
+    });
+  }
 
+
+
+  doneButton.addEventListener('click', () => {
+    const title = document.getElementById('titleInput').value;
+    const comments = "";
+    const rating = document.getElementById('ratingInput').value;
+    const writer = document.getElementById('writerInput').value;
+    const releaseYear = document.getElementById('releaseYearInput').value;
+    const genre = document.getElementById('genreInput').value;
+    const actors = document.getElementById('actorInput').value;
+    const directors = document.getElementById('directorInput').value;
+    const streaming = document.getElementById('streamingInput').value;
+    
+    const movieData = {
+      title: title,
+      comments: comments,
+      rating: rating,
+      writer: writer,
+      releaseYear: releaseYear,
+      genre: genre,
+      actors: actors,
+      directors: directors,
+      streaming: streaming
+    };
+
+    const url = 'http://127.0.0.1:5000/movie/';
+    postMovie(url, movieData);
+});
   function displayMovie(data){
     container.innerHTML = `
     <div class="row mt-2">
@@ -124,7 +176,7 @@
     `;
   }
 
-
+  
 
 
 </script>
