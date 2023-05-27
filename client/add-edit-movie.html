@@ -79,27 +79,11 @@
   const actors = document.getElementById('actorInput').value
   const directors = document.getElementById('directorInput').value
   const streaming = document.getElementById('streamingInput').value
-  
 
-  function displaySSs(service) {
-    return`
-    <a href="browse-streaming-services.html?url=${service["@controls"]["self"]["href"]}">${service.name}</a>
-    `
-  }
-  function displayDirectors(director) {
-    return`
-    <p>${director.first_name} ${director.last_name}</p>
-    `
-  }
-  function displayActors(actor) {
-    //console.log(actor["@controls"].self.href);
-    return`
-    <p>${actor.first_name} ${actor.last_name}</p>
-    `
-  }
   function postMovie(url, movieData) {
     
     url = "http://127.0.0.1:5000/movie/";
+    console.log(JSON.stringify(movieData));
     fetch(url, {
       method: 'POST',
       headers: {
@@ -122,14 +106,12 @@
     });
   }
 
-
-
   doneButton.addEventListener('click', () => {
     const title = document.getElementById('titleInput').value;
     const comments = "";
-    const rating = document.getElementById('ratingInput').value;
+    const rating = parseFloat(document.getElementById('ratingInput').value);
     const writer = document.getElementById('writerInput').value;
-    const releaseYear = document.getElementById('releaseYearInput').value;
+    const releaseYear = parseInt(document.getElementById('releaseYearInput').value, 10);
     const genre = document.getElementById('genreInput').value;
     const actors = document.getElementById('actorInput').value;
     const directors = document.getElementById('directorInput').value;
@@ -140,44 +122,45 @@
       comments: comments,
       rating: rating,
       writer: writer,
-      releaseYear: releaseYear,
-      genre: genre,
+      release_year: releaseYear,
+      genres: genre,
       actors: actors,
       directors: directors,
-      streaming: streaming
+      streaming_services: streaming
     };
+
+    movieDataTest = {
+  "actors": [
+    {
+      "first_name": "Elijah",
+      "last_name": "Wood"
+    },
+    {
+      "first_name": "Ian",
+      "last_name": "McKellen"
+    }
+  ],
+  "directors": [
+    {
+      "first_name": "Peter",
+      "last_name": "Jackson"
+    }
+  ],
+  "genres": "Action, Adventure, Drama",
+  "rating": 9,
+  "release_year": 2021,
+  "streaming_services": [
+    {
+      "name": "HBO Max"
+    }
+  ],
+  "title": "The Looooord of the Rings: The Fellowship of the Ring",
+  "writer": "Fran Walsh, Philippa Boyens"
+}
 
     const url = 'http://127.0.0.1:5000/movie/';
     postMovie(url, movieData);
 });
-  function displayMovie(data){
-    container.innerHTML = `
-    <div class="row mt-2">
-      <div class="col">
-        <img src="${data["@controls"]["mumeta:poster"]["href"]}" class="img-fluid float-end" alt="${data.title} movie poster">
-      </div>
-      <div class="col">
-        <h2>${data.title}</h2>
-        
-        <p><span class="badge text-bg-warning">Rating: </span> ${data.rating}</p>
-        <p><span class="badge text-bg-info">Released: </span> ${data.release_year}</p>
-
-        <p><span style="font-weight:bold;">Writers:</span> ${data.writer}</p>
-        <p><span style="font-weight:bold;">Genres:</span> ${data.genres}</p>
-        <h5>Streaming in:</h5>
-        ${data.streaming_services.map(displaySSs).join('')}
-        <h5>Directors:</h5>
-        ${data.directors.map(displayDirectors).join('')}
-        <h5>Actors:</h5>
-        ${data.actors.map(displayActors).join('')}
-      </div>
-    
-    </div>
-    `;
-  }
-
-  
-
 
 </script>
 </body>

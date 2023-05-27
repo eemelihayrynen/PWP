@@ -859,15 +859,19 @@ class MovieCollection(Resource):
             raise Conflict(description="Identical movie already exists.") from i_e
         return Response(
             status = 201,
-            headers={"Location": url_for("movie"),
-                     "Access-Control-Allow-Methods": "GET, PUT, POST, DELETE",
-                     'Access-Control-Allow-Origin': '*'}
+            headers={
+                     'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+                     'Access-Control-Allow-Origin': '*',
+                     'Access-Control-Allow-Headers': 'Content-Type',
+                     'Location': url_for('movie')}
         )
+
     def options(self):
         '''Hack to evade CORS policy on preflight request when client is deployed locally.'''
         return Response(
-            headers={"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE",
-                     'Access-Control-Allow-Origin': '*'}
+            headers={"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE, OPTIONS",
+                     'Access-Control-Allow-Origin': '*',
+                     'Access-Control-Allow-Headers': '*'}
             )
 
 class ActorConverter(BaseConverter):
