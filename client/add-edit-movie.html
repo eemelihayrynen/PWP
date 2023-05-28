@@ -113,21 +113,34 @@
     const writer = document.getElementById('writerInput').value;
     const releaseYear = parseInt(document.getElementById('releaseYearInput').value, 10);
     const genre = document.getElementById('genreInput').value;
-    const actors = document.getElementById('actorInput').value;
-    const directors = document.getElementById('directorInput').value;
-    const streaming = document.getElementById('streamingInput').value;
-    
-    const movieData = {
-      title: title,
-      comments: comments,
-      rating: rating,
-      writer: writer,
-      release_year: releaseYear,
-      genres: genre,
-      actors: actors,
-      directors: directors,
-      streaming_services: streaming
-    };
+    const actorsInput = document.getElementById('actorInput').value;
+    const actors = actorsInput.split(',').map(actor => {
+      const [first_name, last_name] = actor.trim().split(' ');
+      return { first_name, last_name };
+    });
+    const directorsInput = document.getElementById('directorInput').value;
+    const directors = directorsInput.split(',').map(director => {
+      const [first_name, last_name] = director.trim().split(' ');
+      return { first_name, last_name };
+    });
+    const streamingInput = document.getElementById('streamingInput').value;
+    const streaming = streamingInput.split(',').map(service => {
+      return { name: service.trim() };
+    });
+
+  const movieData = {
+    title: title,
+    comments: comments,
+    rating: rating,
+    writer: writer,
+    release_year: releaseYear,
+    genres: genre,
+    actors: actors,
+    directors: directors,
+    streaming_services: streaming
+  };
+
+  
 
     movieDataTest = {
   "actors": [
