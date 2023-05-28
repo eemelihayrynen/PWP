@@ -15,7 +15,7 @@
         <li class="nav-item"> <a class="nav-link active" aria-current="page" href="search-movies.html">Search movies</a> </li>
         <li class="nav-item"> <a class="nav-link" href="browse-movies.html">Browse movies</a> </li>
         <li class="nav-item"> <a class="nav-link" href="browse-streaming-services.html">Browse streaming services</a> </li>
-        <li class="nav-item"> <a class="nav-link" href="add-edit-movie.html">Add & Edit</a> </li>
+        <li class="nav-item"> <a class="nav-link" href="add-edit-movie.html">Add movie</a> </li>
       </ul>
     </div>
   </div>
@@ -161,8 +161,76 @@
         </div>
       </div>
     `
+
+    const doneButton = document.getElementById('Done');
+
+    
+    doneButton.addEventListener('click', () => {
+      const title = document.getElementById('titleInput').value;
+      const comments = "";
+      const rating = parseFloat(document.getElementById('ratingInput').value);
+      const writer = document.getElementById('writerInput').value;
+      const releaseYear = parseInt(document.getElementById('releaseYearInput').value, 10);
+      const genre = document.getElementById('genreInput').value;
+      const actorsInput = document.getElementById('actorInput').value;
+      const actors = actorsInput.split(',').map(actor => {
+        const [first_name, last_name] = actor.trim().split(' ');
+        return { first_name, last_name };
+      });
+      const directorsInput = document.getElementById('directorInput').value;
+      const directors = directorsInput.split(',').map(director => {
+        const [first_name, last_name] = director.trim().split(' ');
+        return { first_name, last_name };
+      });
+      const streamingInput = document.getElementById('streamingInput').value;
+      const streaming = streamingInput.split(',').map(service => {
+        return { name: service.trim() };
+      });
+
+      const movieData = {
+        title: title,
+        comments: comments,
+        rating: rating,
+        writer: writer,
+        release_year: releaseYear,
+        genres: genre,
+        actors: actors,
+        directors: directors,
+        streaming_services: streaming
+      };
+
+      url = "http://127.0.0.1:5000" + moviedata["@controls"]["edit"]["href"];
+      putMovie(url, movieData);
+    });
   }
 
+  function putMovie(url, movieData) {
+    console.log(JSON.stringify(movieData));
+    fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(movieData)
+    })
+    .then(response => {
+      if (response.ok) {
+        console.log("Movie successfully PUT");
+        container.innerHTML = `<div class="alert alert-success" role="alert">Movie saved successfully!</div>`
+        console.log(response.headers.get('Location'));
+        self_url = response.headers.get('Location');
+        getMovie('http://127.0.0.1:5000' + response.headers.get('Location'));
+ 
+      } else {
+        console.log("Failed to put movie");
+        
+      }
+    })
+    .catch(error => {
+      console.log("Error occurred while posting movie:", error);
+      container.innerHTML = `<div class="alert alert-danger" role="alert">Editing movie failed!</div>`
+    });
+  }
   
   function deleteMovie() {
     console.log(moviedata["@controls"]["mumeta:delete"]["href"]);

@@ -20,6 +20,7 @@
     </div>
   </div>
 </nav>
+<div class="container mt-2" id="dataContainer"> </div>
 <div class="container-md ">
   <h1 class="text-center">Add a movie</h1>
   <div class="row">
@@ -66,9 +67,10 @@
     </div>
   </div>
 </div>
-<div class="container mt-2" id="dataContainer"> </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe" crossorigin="anonymous"></script> 
 <script>
+  const container = document.getElementById('dataContainer');
   const doneButton = document.getElementById('Done');
   const title = document.getElementById('titleInput').value
   const comments = document.getElementById('commentInput').value
@@ -94,7 +96,7 @@
     .then(response => {
       if (response.ok) {
         console.log("Movie successfully posted");
-        
+        container.innerHTML = `<div class="alert alert-success" role="alert">Movie saved successfully!</div>`;
       } else {
         console.log("Failed to post movie");
         
@@ -102,7 +104,7 @@
     })
     .catch(error => {
       console.log("Error occurred while posting movie:", error);
-      
+      container.innerHTML = `<div class="alert alert-danger" role="alert">Posting movie failed!</div>`;
     });
   }
 

@@ -648,7 +648,7 @@ class MovieItem(Resource):
             raise BadRequest(description=str(v_e)) from v_e
 
         movie.title = str(request.json["title"])
-        movie.comments = str(request.json["comments"])
+        #movie.comments = str(request.json["comments"])
         movie.rating = float(request.json["rating"])
         movie.writer = str(request.json["writer"])
         movie.release_year = int(request.json["release_year"])
@@ -718,14 +718,18 @@ class MovieItem(Resource):
         return Response(
             status=201,
             headers={"Location": api.url_for(MovieItem, movie=movie),
-                     'Access-Control-Allow-Origin': '*'}
+                     'Access-Control-Allow-Origin': '*',
+                     'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+                     'Access-Control-Allow-Headers': 'Content-Type, Location',
+                     'Access-Control-Expose-Headers': 'Location'}
         )
 
     def options(self, movie):
         '''Hack to evade CORS policy on preflight request when client is deployed locally.'''
         return Response(
             headers={"Access-Control-Allow-Methods": "GET, PUT, POST, DELETE",
-                     'Access-Control-Allow-Origin': '*'}
+                     'Access-Control-Allow-Origin': '*',
+                     'Access-Control-Allow-Headers': '*'}
             )
 
 class MovieCollection(Resource):
