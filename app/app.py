@@ -867,7 +867,8 @@ class MovieCollection(Resource):
                      'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
                      'Access-Control-Allow-Origin': '*',
                      'Access-Control-Allow-Headers': 'Content-Type',
-                     'Location': url_for('movie')}
+                     'Access-Control-Expose-Headers': 'Location',
+                     "Location": api.url_for(MovieItem, movie=movie)}
         )
 
     def options(self):
