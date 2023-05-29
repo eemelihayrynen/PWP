@@ -36,6 +36,7 @@
       <div class="form-floating mb-3">
         <input type="text" class="form-control" id="ratingInput" placeholder="Rating">
         <label for="floatingInput">Rating</label>
+        <div class="form-text">Add integer or float.</div>
       </div>
       <div class="form-floating mb-3">
         <input type="text" class="form-control" id="writerInput" placeholder="Writer">
@@ -44,6 +45,7 @@
       <div class="form-floating mb-3">
         <input type="text" class="form-control" id="releaseYearInput" placeholder="Release year">
         <label for="floatingInput">Release year</label>
+        <div class="form-text">Only integer is accepted.</div>
       </div>
       <div class="form-floating mb-3">
         <input type="text" class="form-control" id="genreInput" placeholder="Genre(s)">
@@ -52,14 +54,17 @@
       <div class="form-floating mb-3">
         <input type="text" class="form-control" id="actorInput" placeholder="Actor(s)">
         <label for="floatingInput">Actor(s)</label>
+        <div class="form-text">Use format "first_name last_name, first_name lastname".</div>
       </div>
       <div class="form-floating mb-3">
         <input type="text" class="form-control" id="directorInput" placeholder="Director(s)">
         <label for="floatingInput">Director(s)</label>
+        <div class="form-text">Use format "first_name last_name, first_name lastname".</div>
       </div>
       <div class="form-floating mb-3">
         <input type="text" class="form-control" id="streamingInput" placeholder="Streaming service(s)">
         <label for="floatingInput">Streaming service(s)</label>
+        <div class="form-text">Use format "first service, second service, third".</div>
       </div>
     </div>
     <div>
@@ -96,7 +101,12 @@
     .then(response => {
       if (response.ok) {
         console.log("Movie successfully posted");
-        container.innerHTML = `<div class="alert alert-success" role="alert">Movie saved successfully!</div>`;
+        self_url = response.headers.get('Location');
+        container.innerHTML = `
+          <div class="alert alert-success" role="alert">Movie saved successfully!
+            <a class="btn btn-primary" href="search-movies.html?url=${self_url}" role="button">Go to the movie</a>
+          </div>
+        `;
       } else {
         console.log("Failed to post movie");
         
